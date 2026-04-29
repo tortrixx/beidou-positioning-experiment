@@ -1,80 +1,80 @@
-# Beidou Positioning Experiment
+# 北斗定位解算实验
 
-This project implements a full GNSS single point positioning (SPP) workflow based on RINEX observation/navigation data. The current dataset is a GPS RINEX 2.11 pair. The code is modular and includes parsing, satellite position/clock, SPP solver, continuous processing, analysis, visualization, and a PyQt GUI.
+本项目基于 RINEX 观测与导航数据实现 GNSS 单点定位（SPP）全流程软件。当前验证数据为 GPS RINEX 2.11。代码采用模块化设计，包含解析、卫星位置/钟差、SPP 解算、连续定位、误差分析、可视化以及 PyQt GUI。
 
-## Features
-- RINEX 2.11 observation and navigation parsing
-- Satellite position and clock correction
-- Troposphere (Saastamoinen) and ionosphere (Klobuchar) corrections
-- Iterative least-squares SPP
-- Continuous positioning with RMS/mean/max statistics
-- CSV export and plotting (error/DOP, trajectory)
-- PyQt GUI with realtime updates and trajectory replay
+## 功能特性
+- RINEX 2.11 观测与导航解析
+- 卫星位置与钟差修正
+- 对流层（Saastamoinen）与电离层（Klobuchar）改正
+- 迭代最小二乘 SPP
+- 连续定位与 RMS/均值/最大误差统计
+- CSV 导出与绘图（误差/DOP、轨迹）
+- PyQt GUI 实时显示与轨迹回放
 
-## Requirements
+## 依赖环境
 - Python 3.9+
 - PyQt5
 - matplotlib
 
-If needed, install dependencies:
+如需安装依赖：
 ```
 python3 -m pip install PyQt5 matplotlib
 ```
 
-## Data
-Place RINEX files in the project root or provide paths:
-- Observation: `*.o` or `*.obs`
-- Navigation: `*.n` or `*.nav`
+## 数据说明
+将 RINEX 文件放在项目根目录或在命令行中传入路径：
+- 观测文件：`*.o` 或 `*.obs`
+- 导航文件：`*.n` 或 `*.nav`
 
-Example files in this repo:
+本仓库示例数据：
 - `bjfs1170.26o`
 - `brdc1170.26n`
 
-## Quick Start (CLI)
-Single-epoch solve:
+## 快速开始（命令行）
+单历元解算：
 ```
 python3 scripts/run_spp.py --obs bjfs1170.26o --nav brdc1170.26n --epoch 0
 ```
 
-Continuous solve + CSV:
+连续解算并导出 CSV：
 ```
 python3 scripts/run_continuous.py --obs bjfs1170.26o --nav brdc1170.26n
 ```
 
-Generate plots from CSV:
+从 CSV 生成图表：
 ```
 python3 scripts/plot_results.py --csv results.csv --save-dir .
 ```
 
-Inspect RINEX headers:
+查看 RINEX 头部信息：
 ```
 python3 scripts/inspect_rinex.py --obs bjfs1170.26o --nav brdc1170.26n
 ```
 
 ## GUI
-Run the GUI:
+启动 GUI：
 ```
 python3 scripts/gui_app.py
 ```
 
-GUI options:
-- Obs/Nav file: select input data
-- Output CSV: set output path
-- Step / Max epochs: control sampling and runtime
-- Max iterations / Error threshold: solver convergence
-- Elevation mask: satellite cutoff
-- GNSS systems: default `G` for GPS
+GUI 参数说明：
+- Obs/Nav file：选择观测/导航文件
+- Output CSV：设置输出路径
+- Step / Max epochs：抽样步长与最大历元数
+- Max iterations / Error threshold：迭代上限与收敛阈值
+- Elevation mask：高度角掩码
+- GNSS systems：默认 `G`（GPS）
 
-Buttons:
-- Run: start continuous positioning
-- Plot: show error/DOP and trajectory
-- Replay: trajectory playback
+按钮：
+- Run：开始连续定位
+- Plot：显示误差/DOP 与轨迹图
+- Replay：轨迹回放
 
-## Output
-- `results.csv`: time series of positions, DOP, and errors
-- Plot images when using `--save-dir`
+## 输出结果
+- `results.csv`：位置、DOP、误差时间序列
+- 使用 `--save-dir` 生成的图像文件
 
-## Project Structure
+## 项目结构
 ```
 src/
   analysis.py
@@ -101,6 +101,6 @@ reports/
   test_report_template.md
 ```
 
-## Notes / Limitations
-- Current validation uses GPS RINEX 2.11 data. Multi-GNSS support is scaffolded, but BDS data has not been verified in this repo.
-- For full experiment requirements, use multiple datasets and record test results.
+## 说明与限制
+- 当前验证仅使用 GPS RINEX 2.11 数据。多系统支持已预留，但 BDS 数据尚未在本仓库验证。
+- 完整实验需使用多组数据并记录测试结果。
