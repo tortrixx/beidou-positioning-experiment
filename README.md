@@ -31,6 +31,11 @@ python3 -m pip install PyQt5 matplotlib
 - `brdc1170.26n`
 
 ## 快速开始（命令行）
+```
+# 激活环境（mac）
+source .venv/bin/activate
+```
+
 单历元解算：
 ```
 python3 scripts/run_spp.py --obs bjfs1170.26o --nav brdc1170.26n --epoch 0
