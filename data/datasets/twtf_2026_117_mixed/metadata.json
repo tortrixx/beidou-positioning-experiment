@@ -1,0 +1,16 @@
+{
+  "id": "twtf_2026_117_mixed",
+  "station": "TWTF",
+  "year": 2026,
+  "doy": 117,
+  "date": "2026-04-27",
+  "format": "RINEX 3.04",
+  "systems": ["G", "C", "E", "R", "J", "S"],
+  "observation": "rinex/TWTF00TWN_R_20261170000_01D_30S_MO.rnx",
+  "navigation": "rinex/BRDM00DLR_S_20261170000_01D_MN.rnx",
+  "raw_observation": "raw/TWTF00TWN_R_20261170000_01D_30S_MO.rnx.gz",
+  "raw_navigation": "raw/BRDM00DLR_S_20261170000_01D_MN.rnx.gz",
+  "source": "ftp://igs.gnsswhu.cn/pub/gps/data/daily/2026/117/",
+  "status": "mixed_parse_ok_gps_run_ok_bds_single_system_pending",
+  "notes": "Mixed RINEX3 dataset. GPS-only run is usable; BDS-only currently needs solver robustness work."
+}

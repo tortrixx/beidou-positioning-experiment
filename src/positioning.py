@@ -42,42 +42,75 @@ def _earth_rotation_correction(pos: Tuple[float, float, float], tau: float) -> T
     return (x, y, pos[2])
 
 
-def _solve_linear_4x4(a: List[List[float]], b: List[float]) -> List[float]:
+def _ionosphere_coefficients(
+    nav_header: NavHeader,
+    system: str,
+) -> Tuple[Optional[Tuple[float, float, float, float]], Optional[Tuple[float, float, float, float]]]:
+    if system == "C" and nav_header.ion_corr:
+        return nav_header.ion_corr.get("BDSA"), nav_header.ion_corr.get("BDSB")
+    return nav_header.ion_alpha, nav_header.ion_beta
+
+
+def _default_residual_gate_m(systems: Tuple[str, ...]) -> float:
+    if "C" in systems:
+        return 1000.0
+    return 150.0
+
+
+def _validate_receiver_state(lat: float, lon: float, height_m: float) -> None:
+    values = (lat, lon, height_m)
+    if not all(math.isfinite(value) for value in values):
+        raise ValueError("Receiver state is not finite")
+    if height_m < -1000.0 or height_m > 50000.0:
+        raise ValueError("Receiver height is outside the supported SPP range")
+
+
+def _solve_linear(a: List[List[float]], b: List[float]) -> List[float]:
+    size = len(a)
     m = [row[:] + [b[idx]] for idx, row in enumerate(a)]
-    for col in range(4):
-        pivot = max(range(col, 4), key=lambda r: abs(m[r][col]))
+    for col in range(size):
+        pivot = max(range(col, size), key=lambda r: abs(m[r][col]))
         if abs(m[pivot][col]) < 1e-12:
             raise ValueError("Singular normal matrix")
         m[col], m[pivot] = m[pivot], m[col]
         scale = m[col][col]
-        for j in range(col, 5):
+        for j in range(col, size + 1):
             m[col][j] /= scale
-        for r in range(4):
+        for r in range(size):
             if r == col:
                 continue
             factor = m[r][col]
-            for j in range(col, 5):
+            for j in range(col, size + 1):
                 m[r][j] -= factor * m[col][j]
-    return [m[r][4] for r in range(4)]
+    return [m[r][size] for r in range(size)]
+
+
+def _invert_matrix(a: List[List[float]]) -> List[List[float]]:
+    size = len(a)
+    m = [row[:] + [1.0 if i == j else 0.0 for j in range(size)] for i, row in enumerate(a)]
+    for col in range(size):
+        pivot = max(range(col, size), key=lambda r: abs(m[r][col]))
+        if abs(m[pivot][col]) < 1e-12:
+            raise ValueError("Singular normal matrix")
+        m[col], m[pivot] = m[pivot], m[col]
+        scale = m[col][col]
+        for j in range(col, size * 2):
+            m[col][j] /= scale
+        for r in range(size):
+            if r == col:
+                continue
+            factor = m[r][col]
+            for j in range(col, size * 2):
+                m[r][j] -= factor * m[col][j]
+    return [row[size : size * 2] for row in m]
+
+
+def _solve_linear_4x4(a: List[List[float]], b: List[float]) -> List[float]:
+    return _solve_linear(a, b)
 
 
 def _invert_4x4(a: List[List[float]]) -> List[List[float]]:
-    m = [row[:] + [1.0 if i == j else 0.0 for j in range(4)] for i, row in enumerate(a)]
-    for col in range(4):
-        pivot = max(range(col, 4), key=lambda r: abs(m[r][col]))
-        if abs(m[pivot][col]) < 1e-12:
-            raise ValueError("Singular normal matrix")
-        m[col], m[pivot] = m[pivot], m[col]
-        scale = m[col][col]
-        for j in range(col, 8):
-            m[col][j] /= scale
-        for r in range(4):
-            if r == col:
-                continue
-            factor = m[r][col]
-            for j in range(col, 8):
-                m[r][j] -= factor * m[col][j]
-    return [row[4:8] for row in m]
+    return _invert_matrix(a)
 
 
 def single_point_position(
@@ -89,22 +122,25 @@ def single_point_position(
     elev_mask_deg: float = 10.0,
     systems: Tuple[str, ...] = ("G",),
     error_thresh_m: float = 0.01,
-    residual_gate_m: float = 150.0,
+    residual_gate_m: Optional[float] = None,
     time_system: Optional[str] = None,
 ) -> PositionSolution:
     x, y, z = approx_xyz
-    clock_bias_m = 0.0
+    clock_bias_by_system: Dict[str, float] = {system: 0.0 for system in systems}
+    active_systems: List[str] = []
     elev_mask = math.radians(elev_mask_deg)
+    residual_gate = _default_residual_gate_m(systems) if residual_gate_m is None else residual_gate_m
+    normal: List[List[float]] = []
 
     for iter_idx in range(max_iter):
         lat, lon, h = ecef_to_geodetic(x, y, z)
+        _validate_receiver_state(lat, lon, h)
         gps_time = epoch.time
         if time_system == "BDT":
-            gps_time = epoch.time - timedelta(seconds=BDT_GPS_OFFSET)
+            gps_time = epoch.time + timedelta(seconds=BDT_GPS_OFFSET)
         _, sow = gps_week_seconds(gps_time)
 
-        h_rows: List[List[float]] = []
-        v_rows: List[float] = []
+        geometry_rows: List[Tuple[str, List[float], float]] = []
         used_sats: List[str] = []
 
         for prn, obs in epoch.sat_obs.items():
@@ -137,49 +173,61 @@ def single_point_position(
                 continue
 
             tropo = saastamoinen_delay(lat, h, elev)
-            iono = 0.0
-            if prn[0] == "G":
-                iono = klobuchar_delay(lat, lon, elev, az, sow, nav_header.ion_alpha, nav_header.ion_beta)
+            alpha, beta = _ionosphere_coefficients(nav_header, prn[0])
+            iono = klobuchar_delay(lat, lon, elev, az, sow, alpha, beta)
 
             corrected = pseudorange + C * dt_sv - tropo - iono
-            v = corrected - (rho + clock_bias_m)
-            if iter_idx > 0 and abs(v) > residual_gate_m:
+            sat_system = prn[0]
+            v = corrected - (rho + clock_bias_by_system.get(sat_system, 0.0))
+            if iter_idx > 0 and abs(v) > residual_gate:
                 continue
 
-            h_row = [-dx / rho, -dy / rho, -dz / rho, 1.0]
-            h_rows.append(h_row)
-            v_rows.append(v)
+            geometry_rows.append((sat_system, [-dx / rho, -dy / rho, -dz / rho], v))
             used_sats.append(prn)
 
-        if len(h_rows) < 4:
+        active_systems = []
+        for system, _, _ in geometry_rows:
+            if system not in active_systems:
+                active_systems.append(system)
+        active_systems.sort(key=lambda system: systems.index(system) if system in systems else len(systems))
+        if "G" in active_systems:
+            active_systems.insert(0, active_systems.pop(active_systems.index("G")))
+
+        unknown_count = 3 + len(active_systems)
+        if len(geometry_rows) < unknown_count:
             raise ValueError("Not enough satellites for positioning")
 
-        normal = [[0.0 for _ in range(4)] for _ in range(4)]
-        rhs = [0.0 for _ in range(4)]
-        for row, v in zip(h_rows, v_rows):
-            for i in range(4):
+        normal = [[0.0 for _ in range(unknown_count)] for _ in range(unknown_count)]
+        rhs = [0.0 for _ in range(unknown_count)]
+        for system, geometry, v in geometry_rows:
+            row = geometry + [1.0 if system == active_system else 0.0 for active_system in active_systems]
+            for i in range(unknown_count):
                 rhs[i] += row[i] * v
-                for j in range(4):
+                for j in range(unknown_count):
                     normal[i][j] += row[i] * row[j]
 
-        dxs = _solve_linear_4x4(normal, rhs)
+        dxs = _solve_linear(normal, rhs)
+        if not all(math.isfinite(delta) for delta in dxs):
+            raise ValueError("Positioning update is not finite")
         x += dxs[0]
         y += dxs[1]
         z += dxs[2]
-        clock_bias_m += dxs[3]
+        for idx, system in enumerate(active_systems):
+            clock_bias_by_system[system] = clock_bias_by_system.get(system, 0.0) + dxs[3 + idx]
 
         if math.sqrt(dxs[0] ** 2 + dxs[1] ** 2 + dxs[2] ** 2) < error_thresh_m:
             break
 
-    cov = _invert_4x4(normal)
+    cov = _invert_matrix(normal)
     pdop = math.sqrt(cov[0][0] + cov[1][1] + cov[2][2])
     gdop = math.sqrt(cov[0][0] + cov[1][1] + cov[2][2] + cov[3][3])
 
     lat, lon, h = ecef_to_geodetic(x, y, z)
+    ref_system = active_systems[0] if active_systems else (systems[0] if systems else "G")
     return PositionSolution(
         time=epoch.time,
         position_ecef=(x, y, z),
-        clock_bias_m=clock_bias_m,
+        clock_bias_m=clock_bias_by_system.get(ref_system, 0.0),
         position_blh=(math.degrees(lat), math.degrees(lon), h),
         used_sats=used_sats,
         pdop=pdop,

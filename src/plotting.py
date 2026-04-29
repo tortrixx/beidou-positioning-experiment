@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Iterable, Optional
 
 
@@ -9,21 +10,30 @@ def plot_error_and_dop(
     three_d: Iterable[float],
     pdop: Iterable[float],
     save_path: Optional[str] = None,
-) -> None:
+) -> bool:
     try:
+        if save_path:
+            import matplotlib
+
+            matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except ImportError:
         print("matplotlib not available; skip plotting")
-        return
+        return False
+
+    time_list = list(times)
+    horiz_list = list(horiz)
+    three_d_list = list(three_d)
+    pdop_list = list(pdop)
 
     fig, axes = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
-    axes[0].plot(list(times), list(horiz), label="Horizontal error (m)")
-    axes[0].plot(list(times), list(three_d), label="3D error (m)")
+    axes[0].plot(time_list, horiz_list, label="Horizontal error (m)")
+    axes[0].plot(time_list, three_d_list, label="3D error (m)")
     axes[0].set_ylabel("Error (m)")
     axes[0].legend()
     axes[0].grid(True, linestyle="--", alpha=0.5)
 
-    axes[1].plot(list(times), list(pdop), label="PDOP")
+    axes[1].plot(time_list, pdop_list, label="PDOP")
     axes[1].set_xlabel("Epoch index")
     axes[1].set_ylabel("DOP")
     axes[1].grid(True, linestyle="--", alpha=0.5)
@@ -31,24 +41,35 @@ def plot_error_and_dop(
 
     fig.tight_layout()
     if save_path:
+        Path(save_path).parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(save_path, dpi=150)
+        plt.close(fig)
+        return Path(save_path).exists()
     else:
         plt.show()
+        return True
 
 
 def plot_trajectory(
     lat: Iterable[float],
     lon: Iterable[float],
     save_path: Optional[str] = None,
-) -> None:
+) -> bool:
     try:
+        if save_path:
+            import matplotlib
+
+            matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except ImportError:
         print("matplotlib not available; skip plotting")
-        return
+        return False
+
+    lat_list = list(lat)
+    lon_list = list(lon)
 
     fig, ax = plt.subplots(1, 1, figsize=(6, 6))
-    ax.plot(list(lon), list(lat), linewidth=1.0)
+    ax.plot(lon_list, lat_list, linewidth=1.0)
     ax.set_xlabel("Longitude (deg)")
     ax.set_ylabel("Latitude (deg)")
     ax.grid(True, linestyle="--", alpha=0.5)
@@ -56,9 +77,13 @@ def plot_trajectory(
 
     fig.tight_layout()
     if save_path:
+        Path(save_path).parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(save_path, dpi=150)
+        plt.close(fig)
+        return Path(save_path).exists()
     else:
         plt.show()
+        return True
 
 
 def playback_trajectory(

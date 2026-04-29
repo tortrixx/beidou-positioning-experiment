@@ -6,18 +6,20 @@ import sys
 
 sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 
-from rinex_nav import parse_rinex_nav
-from rinex_obs import parse_rinex_obs
+from experiment_modules import RinexDataModule
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Quick RINEX 2.11 inspection")
-    parser.add_argument("--obs", default="bjfs1170.26o", help="Path to RINEX obs file")
-    parser.add_argument("--nav", default="brdc1170.26n", help="Path to RINEX nav file")
+    parser.add_argument("--obs", default="data/sample/bjfs1170.26o", help="Path to RINEX obs file")
+    parser.add_argument("--nav", default="data/sample/brdc1170.26n", help="Path to RINEX nav file")
     args = parser.parse_args()
 
-    header, epochs = parse_rinex_obs(args.obs)
-    nav_header, nav_records = parse_rinex_nav(args.nav)
+    dataset = RinexDataModule().load(args.obs, args.nav)
+    header = dataset.obs_header
+    epochs = dataset.epochs
+    nav_header = dataset.nav_header
+    nav_records = dataset.nav_records
 
     print(f"OBS version: {header.version}")
     print(f"Marker: {header.marker_name}")

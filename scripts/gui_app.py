@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable
 
 from PyQt5.QtCore import QObject, QThread, QTimer, pyqtSignal
 from PyQt5.QtWidgets import (
@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import (
 
 sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 
-from pipeline import run_continuous_pipeline, write_csv
+from experiment_modules import SoftwareSystemModule
 from plotting import plot_error_and_dop, plot_trajectory
 
 
@@ -60,7 +60,7 @@ class Worker(QObject):
             def _progress(epoch_idx: int, count: int, sol) -> None:
                 self.progress.emit(epoch_idx, count, sol)
 
-            obs_header, solutions, errors, stats = run_continuous_pipeline(
+            result = SoftwareSystemModule().run(
                 self.obs_path,
                 self.nav_path,
                 step=self.step,
@@ -69,10 +69,10 @@ class Worker(QObject):
                 error_thresh_m=self.err_thresh,
                 elev_mask_deg=self.elev_mask,
                 systems=self.systems,
+                output_csv=self.csv_path,
                 progress=_progress,
             )
-            write_csv(self.csv_path, solutions, errors)
-            self.finished.emit(obs_header, solutions, errors, stats)
+            self.finished.emit(result.obs_header, result.solutions, result.errors, result.stats)
         except Exception as exc:
             self.failed.emit(str(exc))
 
@@ -83,8 +83,8 @@ class MainWindow(QWidget):
         self.setWindowTitle("Beidou Positioning Experiment")
         self.resize(640, 520)
 
-        self.obs_edit = QLineEdit("bjfs1170.26o")
-        self.nav_edit = QLineEdit("brdc1170.26n")
+        self.obs_edit = QLineEdit("data/sample/bjfs1170.26o")
+        self.nav_edit = QLineEdit("data/sample/brdc1170.26n")
         self.csv_edit = QLineEdit("results.csv")
 
         self.step_spin = QSpinBox()

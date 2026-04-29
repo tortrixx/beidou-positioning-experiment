@@ -36,9 +36,12 @@ def main() -> None:
     if args.save_dir:
         err_path = f"{args.save_dir}/error_dop.png"
         traj_path = f"{args.save_dir}/trajectory.png"
-        plot_error_and_dop(times, horiz, three_d, pdop, save_path=err_path)
-        plot_trajectory(lat, lon, save_path=traj_path)
-        print(f"Plots saved: {err_path}, {traj_path}")
+        saved_error = plot_error_and_dop(times, horiz, three_d, pdop, save_path=err_path)
+        saved_traj = plot_trajectory(lat, lon, save_path=traj_path)
+        if saved_error and saved_traj:
+            print(f"Plots saved: {err_path}, {traj_path}")
+        else:
+            raise RuntimeError("Plot generation failed")
     else:
         plot_error_and_dop(times, horiz, three_d, pdop)
         plot_trajectory(lat, lon)

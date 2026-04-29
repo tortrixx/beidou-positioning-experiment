@@ -1,0 +1,16 @@
+{
+  "id": "bjfs_2026_117_gps",
+  "station": "BJFS",
+  "year": 2026,
+  "doy": 117,
+  "date": "2026-04-27",
+  "format": "RINEX 2.11",
+  "systems": ["G"],
+  "observation": "rinex/bjfs1170.26o",
+  "navigation": "rinex/brdc1170.26n",
+  "raw_observation": "raw/bjfs1170.26o.gz",
+  "raw_navigation": "raw/brdc1170.26n.gz",
+  "source": "ftp://igs.gnsswhu.cn/pub/gps/data/daily/2026/117/",
+  "status": "full_gps_run_ok",
+  "notes": "Default project sample dataset copied into data/sample as well."
+}

@@ -18,8 +18,7 @@
 
 如需安装依赖：
 ```bash
-
-python3 -m pip install PyQt5 matplotlib
+python3 -m pip install -r requirements.txt
 ```
 
 ## 数据说明
@@ -28,8 +27,8 @@ python3 -m pip install PyQt5 matplotlib
 - 导航文件：`*.n` 或 `*.nav`
 
 本仓库示例数据：
-- `bjfs1170.26o`
-- `brdc1170.26n`
+- `data/sample/bjfs1170.26o`
+- `data/sample/brdc1170.26n`
 
 ## 快速开始（命令行）
 ```bash
@@ -42,12 +41,12 @@ source .venv/bin/activate
 
 单历元解算：
 ```bash
-python3 scripts/run_spp.py --obs bjfs1170.26o --nav brdc1170.26n --epoch 0
+python3 scripts/run_spp.py --obs data/sample/bjfs1170.26o --nav data/sample/brdc1170.26n --epoch 0
 ```
 
 连续解算并导出 CSV：
 ```bash
-python3 scripts/run_continuous.py --obs bjfs1170.26o --nav brdc1170.26n
+python3 scripts/run_continuous.py --obs data/sample/bjfs1170.26o --nav data/sample/brdc1170.26n
 ```
 
 从 CSV 生成图表：
@@ -57,7 +56,7 @@ python3 scripts/plot_results.py --csv results.csv --save-dir .
 
 查看 RINEX 头部信息：
 ```bash
-python3 scripts/inspect_rinex.py --obs bjfs1170.26o --nav brdc1170.26n
+python3 scripts/inspect_rinex.py --obs data/sample/bjfs1170.26o --nav data/sample/brdc1170.26n
 ```
 
 ## GUI
@@ -90,6 +89,7 @@ src/
   atmosphere.py
   constants.py
   coords.py
+  experiment_modules.py
   models.py
   pipeline.py
   plotting.py
@@ -110,6 +110,14 @@ reports/
   test_report_template.md
 ```
 
+## 实验模块封装
+`src/experiment_modules.py` 将底层算法按实验要求封装为 5 个高层模块：
+- 模块1 `RinexDataModule`：RINEX 观测/导航解析、文件校验、基础观测预处理。
+- 模块2 `SatelliteCorrectionModule`：广播星历卫星位置、钟差、地球自转、对流层和电离层改正。
+- 模块3 `SinglePointPositioningModule`：可见卫星筛选、迭代最小二乘定位、PDOP/GDOP 输出。
+- 模块4 `ContinuousAnalysisModule`：连续定位误差统计、CSV 导出、误差/DOP 与轨迹图生成。
+- 模块5 `SoftwareSystemModule`：整合“数据输入 -> 预处理 -> 解算 -> 分析 -> 输出”的完整自动化流程。
+
 ## 说明与限制
-- 当前验证仅使用 GPS RINEX 2.11 数据。多系统支持已预留，但 BDS 数据尚未在本仓库验证。
+- 当前验证数据为 GPS RINEX 2.11；代码已支持 RINEX 3 BDS 导航记录、BDSA/BDSB 电离层参数和 C01-C05 GEO 分支，但仍需补充真实 BDS 数据集完成验收验证。
 - 完整实验需使用多组数据并记录测试结果。

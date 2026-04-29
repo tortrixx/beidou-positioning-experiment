@@ -18,8 +18,16 @@ def run_continuous_pipeline(
     elev_mask_deg: float = 10.0,
     systems: Iterable[str] = ("G",),
     error_thresh_m: float = 0.01,
+    residual_gate_m: Optional[float] = None,
     progress: Optional[Callable[[int, int, PositionSolution], None]] = None,
 ) -> Tuple[ObsHeader, List[PositionSolution], List[Dict[str, float]], Dict[str, float]]:
+    if step < 1:
+        raise ValueError("step must be >= 1")
+    if max_epochs < 0:
+        raise ValueError("max_epochs must be >= 0")
+    if max_iter < 1:
+        raise ValueError("max_iter must be >= 1")
+
     obs_header, epochs = parse_rinex_obs(obs_path)
     nav_header, nav_records = parse_rinex_nav(nav_path)
 
@@ -45,6 +53,7 @@ def run_continuous_pipeline(
                 elev_mask_deg=elev_mask_deg,
                 systems=tuple(systems),
                 error_thresh_m=error_thresh_m,
+                residual_gate_m=residual_gate_m,
                 time_system=obs_header.time_system,
             )
         except ValueError:

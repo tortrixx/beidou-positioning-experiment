@@ -8,11 +8,23 @@ from constants import BDT_GPS_OFFSET, F_REL, MU_BDS, MU_GPS, OMEGA_E, OMEGA_E_BD
 from models import NavRecord
 from time_utils import adjust_week, gnss_week_seconds
 
+BDS_GEO_INCLINATION_OFFSET = math.radians(-5.0)
+
 
 def _apply_time_offset(prn: str, t: datetime, time_system: Optional[str]) -> datetime:
     if prn.startswith("C") and time_system != "BDT":
-        return t + timedelta(seconds=BDT_GPS_OFFSET)
+        return t - timedelta(seconds=BDT_GPS_OFFSET)
     return t
+
+
+def _is_bds_geo(prn: str) -> bool:
+    if not prn.startswith("C"):
+        return False
+    try:
+        number = int(prn[1:])
+    except ValueError:
+        return False
+    return 1 <= number <= 5
 
 
 def select_ephemeris(
@@ -83,15 +95,31 @@ def satellite_position_and_clock(
     x_orb = r * math.cos(u)
     y_orb = r * math.sin(u)
 
-    omega = record.omega0 + (record.omega_dot - omega_e) * tk - omega_e * record.toe
+    if _is_bds_geo(record.prn):
+        omega = record.omega0 + record.omega_dot * tk - omega_e * record.toe
+    else:
+        omega = record.omega0 + (record.omega_dot - omega_e) * tk - omega_e * record.toe
     cos_omega = math.cos(omega)
     sin_omega = math.sin(omega)
     cos_i = math.cos(i)
     sin_i = math.sin(i)
 
-    x = x_orb * cos_omega - y_orb * cos_i * sin_omega
-    y = x_orb * sin_omega + y_orb * cos_i * cos_omega
-    z = y_orb * sin_i
+    x_g = x_orb * cos_omega - y_orb * cos_i * sin_omega
+    y_g = x_orb * sin_omega + y_orb * cos_i * cos_omega
+    z_g = y_orb * sin_i
+
+    if _is_bds_geo(record.prn):
+        sin_rot = math.sin(omega_e * tk)
+        cos_rot = math.cos(omega_e * tk)
+        sin_offset = math.sin(BDS_GEO_INCLINATION_OFFSET)
+        cos_offset = math.cos(BDS_GEO_INCLINATION_OFFSET)
+        x = x_g * cos_rot + y_g * sin_rot * cos_offset + z_g * sin_rot * sin_offset
+        y = -x_g * sin_rot + y_g * cos_rot * cos_offset + z_g * cos_rot * sin_offset
+        z = -y_g * sin_offset + z_g * cos_offset
+    else:
+        x = x_g
+        y = y_g
+        z = z_g
 
     dtr = F_REL * e * record.sqrt_a * sin_e
     dt_sv = record.af0 + record.af1 * dt + record.af2 * dt * dt + dtr - record.tgd

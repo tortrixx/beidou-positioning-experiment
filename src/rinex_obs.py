@@ -28,9 +28,14 @@ def _parse_obs_values(
     chunks: List[str] = []
     idx = start_index
     while len(chunks) < len(obs_types):
+        if idx >= len(lines):
+            break
         line = lines[idx]
+        if idx > start_index and _looks_like_satellite_record(line):
+            break
         start = offset if idx == start_index else 0
-        for pos in range(start, 80, 16):
+        line_width = max(len(line), 80)
+        for pos in range(start, line_width, 16):
             if len(chunks) >= len(obs_types):
                 break
             chunks.append(line[pos : pos + 16])
@@ -40,6 +45,11 @@ def _parse_obs_values(
         values[obs_type] = rinex_float(chunk[:14])
 
     return values, idx - start_index
+
+
+def _looks_like_satellite_record(line: str) -> bool:
+    sat = line[0:3]
+    return len(sat) == 3 and sat[0].isalpha() and sat[1:].isdigit()
 
 
 def parse_rinex_obs(path: str | Path) -> Tuple[ObsHeader, List[ObsEpoch]]:

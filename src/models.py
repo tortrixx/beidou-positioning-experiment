@@ -64,6 +64,7 @@ class NavHeader:
     ion_alpha: Optional[Tuple[float, float, float, float]]
     ion_beta: Optional[Tuple[float, float, float, float]]
     leap_seconds: Optional[int]
+    ion_corr: Optional[Dict[str, Tuple[float, float, float, float]]] = None
 
 
 @dataclass

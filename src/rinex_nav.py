@@ -27,6 +27,15 @@ def _parse_four(line: str) -> list[float]:
     ]
 
 
+def _parse_four_v3(line: str) -> list[float]:
+    return [
+        rinex_float(line[4:23]) or 0.0,
+        rinex_float(line[23:42]) or 0.0,
+        rinex_float(line[42:61]) or 0.0,
+        rinex_float(line[61:80]) or 0.0,
+    ]
+
+
 def _parse_header_four(line: str) -> Tuple[float, float, float, float]:
     parts = line[0:60].split()
     values = [(rinex_float(part) or 0.0) for part in parts[:4]]
@@ -41,25 +50,45 @@ def parse_rinex_nav(path: str | Path) -> Tuple[NavHeader, List[NavRecord]]:
     version = 0.0
     ion_alpha: Optional[Tuple[float, float, float, float]] = None
     ion_beta: Optional[Tuple[float, float, float, float]] = None
+    ion_corr: dict[str, Tuple[float, float, float, float]] = {}
     leap_seconds: Optional[int] = None
     while i < len(lines):
-        label = lines[i][60:80].strip()
+        line = lines[i]
+        label = line[60:80].strip()
+        if "IONOSPHERIC CORR" in line:
+            label = "IONOSPHERIC CORR"
+        elif "END OF HEADER" in line:
+            label = "END OF HEADER"
         if label == "RINEX VERSION / TYPE":
-            version_text = lines[i][0:9].strip()
+            version_text = line[0:9].strip()
             if version_text:
                 version = float(version_text)
         elif label == "ION ALPHA":
-            ion_alpha = _parse_header_four(lines[i])
+            ion_alpha = _parse_header_four(line)
         elif label == "ION BETA":
-            ion_beta = _parse_header_four(lines[i])
+            ion_beta = _parse_header_four(line)
+        elif label == "IONOSPHERIC CORR":
+            corr_type = line[0:4].strip()
+            if corr_type:
+                corr_values = _parse_header_four(line[4:60])
+                ion_corr[corr_type] = corr_values
+                if corr_type == "GPSA":
+                    ion_alpha = corr_values
+                elif corr_type == "GPSB":
+                    ion_beta = corr_values
         elif label == "LEAP SECONDS":
-            leap_seconds = rinex_int(lines[i][0:6])
+            leap_seconds = rinex_int(line[0:6])
         elif label == "END OF HEADER":
             i += 1
             break
         i += 1
 
-    header = NavHeader(ion_alpha=ion_alpha, ion_beta=ion_beta, leap_seconds=leap_seconds)
+    header = NavHeader(
+        ion_alpha=ion_alpha,
+        ion_beta=ion_beta,
+        leap_seconds=leap_seconds,
+        ion_corr=ion_corr,
+    )
 
     records: List[NavRecord] = []
     while i < len(lines):
@@ -68,7 +97,8 @@ def parse_rinex_nav(path: str | Path) -> Tuple[NavHeader, List[NavRecord]]:
             i += 1
             continue
 
-        head = line[0:22].split()
+        head_end = 23 if version >= 3.0 else 22
+        head = line[0:head_end].split()
         if len(head) < 7:
             i += 1
             continue
@@ -78,6 +108,9 @@ def parse_rinex_nav(path: str | Path) -> Tuple[NavHeader, List[NavRecord]]:
             prn = prn_token
         else:
             prn = f"G{int(prn_token):02d}"
+        if version >= 3.0 and prn[0] in ("R", "S"):
+            i += 4
+            continue
 
         year_token = int(head[1])
         if year_token >= 1000:
@@ -91,24 +124,31 @@ def parse_rinex_nav(path: str | Path) -> Tuple[NavHeader, List[NavRecord]]:
         second = float(head[6])
         epoch = datetime(year, month, day, hour, minute, int(second), int(round((second % 1) * 1_000_000)))
 
-        af0 = rinex_float(line[22:41]) or 0.0
-        af1 = rinex_float(line[41:60]) or 0.0
-        af2 = rinex_float(line[60:79]) or 0.0
+        if version >= 3.0:
+            af0 = rinex_float(line[23:42]) or 0.0
+            af1 = rinex_float(line[42:61]) or 0.0
+            af2 = rinex_float(line[61:80]) or 0.0
+            parse_four = _parse_four_v3
+        else:
+            af0 = rinex_float(line[22:41]) or 0.0
+            af1 = rinex_float(line[41:60]) or 0.0
+            af2 = rinex_float(line[60:79]) or 0.0
+            parse_four = _parse_four
 
         i += 1
-        vals2 = _parse_four(lines[i])
+        vals2 = parse_four(lines[i])
         i += 1
-        vals3 = _parse_four(lines[i])
+        vals3 = parse_four(lines[i])
         i += 1
-        vals4 = _parse_four(lines[i])
+        vals4 = parse_four(lines[i])
         i += 1
-        vals5 = _parse_four(lines[i])
+        vals5 = parse_four(lines[i])
         i += 1
-        vals6 = _parse_four(lines[i])
+        vals6 = parse_four(lines[i])
         i += 1
-        vals7 = _parse_four(lines[i])
+        vals7 = parse_four(lines[i])
         i += 1
-        vals8 = _parse_four(lines[i])
+        vals8 = parse_four(lines[i])
         i += 1
 
         record = NavRecord(
