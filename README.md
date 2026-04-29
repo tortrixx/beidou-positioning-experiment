@@ -17,7 +17,8 @@
 - matplotlib
 
 如需安装依赖：
-```
+```bash
+
 python3 -m pip install PyQt5 matplotlib
 ```
 
@@ -31,34 +32,37 @@ python3 -m pip install PyQt5 matplotlib
 - `brdc1170.26n`
 
 ## 快速开始（命令行）
-```
+```bash
 # 激活环境（mac）
 source .venv/bin/activate
+
+# 激活环境（Windows）
+.venv\Scripts\activate
 ```
 
 单历元解算：
-```
+```bash
 python3 scripts/run_spp.py --obs bjfs1170.26o --nav brdc1170.26n --epoch 0
 ```
 
 连续解算并导出 CSV：
-```
+```bash
 python3 scripts/run_continuous.py --obs bjfs1170.26o --nav brdc1170.26n
 ```
 
 从 CSV 生成图表：
-```
+```bash
 python3 scripts/plot_results.py --csv results.csv --save-dir .
 ```
 
 查看 RINEX 头部信息：
-```
+```bash
 python3 scripts/inspect_rinex.py --obs bjfs1170.26o --nav brdc1170.26n
 ```
 
 ## GUI
 启动 GUI：
-```
+```bash
 python3 scripts/gui_app.py
 ```
 
