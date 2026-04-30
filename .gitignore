@@ -12,6 +12,10 @@ dist/
 data/datasets/*/raw/
 1_UrbanNav-HK-Medium-Urban-1/
 results.csv
+results/ml_compensation/test_predictions.csv
+results/redundancy_tests/*.csv
+!results/redundancy_tests/summary.csv
+results/datasets/urban_nav_hk_medium_urban_1_*/results.csv
 
 *.tmp
 *.log

@@ -269,9 +269,11 @@ data/datasets/
   daej_2026_117_gps/
   hksl_2026_117_gps/
   twtf_2026_117_mixed/
+  urban_nav_hk_medium_urban_1/
+  redundancy_stress_2026_117/
 ```
 
-每个 `data/datasets/*/rinex/` 目录保存解压后的 RINEX 文件，每个 `metadata.json` 记录数据来源和用途。
+每个 `data/datasets/*/rinex/` 目录保存项目演示所需的 RINEX 文件，每个 `metadata.json` 记录数据来源和用途。UrbanNav 数据仅保留一组代表性 GPS/BDS 接收机数据，用于城市动态和容错测试。
 
 ### 7.2 结果目录
 
@@ -284,9 +286,13 @@ results/datasets/*/
 results/ml_compensation/
   linear_model.json           线性回归模型参数
   metrics.csv                 补偿前后指标
-  test_predictions.csv        测试集预测结果
   compensation_comparison.png 补偿效果图
+
+results/redundancy_tests/
+  summary.csv                 冗余/容错测试汇总
 ```
+
+说明：详细逐历元 CSV、UrbanNav 临时图表和线性回归逐样本预测可由脚本重新生成，最终提交只保留报告引用图片、模型文件和汇总结果。
 
 ## 8. 主要实验结果
 

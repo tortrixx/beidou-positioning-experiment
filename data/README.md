@@ -32,7 +32,7 @@ The main index is:
 | `daej_2026_117_gps` | RINEX 2.11 | GPS | Full GPS run OK |
 | `hksl_2026_117_gps` | RINEX 2.11 | GPS | Full GPS run OK |
 | `twtf_2026_117_mixed` | RINEX 3.04 | GPS/BDS/Galileo/GLONASS/QZSS/SBAS | Mixed parse OK; GPS-only run OK; BDS-only pending |
-| `urban_nav_hk_medium_urban_1` | RINEX 3.03 | GPS/BDS/Galileo/GLONASS/QZSS/SBAS | Urban dynamic dataset; BDS and GPS+BDS 200-epoch runs OK |
+| `urban_nav_hk_medium_urban_1` | RINEX 3.03 | GPS/BDS | Urban dynamic representative receiver data; BDS and GPS+BDS 200-epoch runs OK |
 | `redundancy_stress_2026_117` | RINEX 2.11/3.05 compressed | GPS and GPS/BDS | Robustness dataset for `.o.gz`, `.rnx.gz`, and Hatanaka warning tests |
 
 ## Result Outputs
@@ -41,16 +41,21 @@ Generated CSV and plots are stored under:
 
 `results/datasets/`
 
+Only selected report figures and summary outputs are committed. Detailed
+per-dataset CSV files and UrbanNav stress-test plots can be regenerated with
+the commands below.
+
 | Dataset output | Horizontal RMS / Mean / Max (m) | 3D RMS / Mean / Max (m) |
 | --- | --- | --- |
 | `results/datasets/bjfs_2026_117_gps` | `1.964 / 1.594 / 5.892` | `4.314 / 3.585 / 10.009` |
 | `results/datasets/daej_2026_117_gps` | `2.586 / 1.853 / 12.215` | `4.220 / 3.488 / 14.292` |
 | `results/datasets/hksl_2026_117_gps` | `4.005 / 3.448 / 9.780` | `6.048 / 5.276 / 15.305` |
 | `results/datasets/twtf_2026_117_gps_from_mixed` | `6.254 / 4.920 / 14.966` | `7.722 / 6.468 / 20.000` |
-| `results/datasets/urban_nav_hk_medium_urban_1_bds` | `621.689 / 592.237 / 824.339` | `625.705 / 596.388 / 847.241` |
-| `results/datasets/urban_nav_hk_medium_urban_1_gps_bds` | `617.069 / 586.390 / 817.517` | `620.077 / 590.190 / 817.620` |
 
-Note: UrbanNav is a moving urban dataset. The error statistics above use the RINEX approximate position as the reference, so they mainly verify processing stability and multi-system availability rather than static-station precision.
+Note: UrbanNav is a moving urban dataset. Its outputs are used mainly for
+processing stability and GPS/BDS availability checks rather than static-station
+precision statistics, because the RINEX approximate position is not a fixed
+truth trajectory.
 
 Robustness checks are stored under:
 

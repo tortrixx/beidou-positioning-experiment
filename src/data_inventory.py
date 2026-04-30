@@ -33,7 +33,7 @@ def _receiver_name(path: Path, dataset_name: str) -> str:
 
 def _navigation_files(root: Path) -> List[Path]:
     candidates: List[Path] = []
-    search_dirs = [root, root / "rinex", root / "raw"]
+    search_dirs = [root, root / "rinex"]
     for search_dir in search_dirs:
         if not search_dir.exists():
             continue
