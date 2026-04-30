@@ -66,7 +66,6 @@ beidou-positioning-experiment/
   scripts/                          命令行脚本和 GUI 程序
   src/                              核心源码
   tests/                            自动化测试
-  dist/                             最终提交压缩包
 ```
 
 ## 5. 核心源码文件说明
@@ -244,14 +243,6 @@ beidou-positioning-experiment/
 - 输出补偿前后 RMS；
 - 保存模型和预测结果。
 
-`src/submission.py`
-
-用于最终提交整理：
-
-- 生成提交文件列表；
-- 排除 `.venv`、`.git`、缓存、raw 压缩数据；
-- 创建最终提交 zip 包。
-
 ## 6. scripts 脚本说明
 
 | 脚本 | 功能 | 常用命令 |
@@ -263,7 +254,6 @@ beidou-positioning-experiment/
 | `scripts/gui_app.py` | 启动 PyQt GUI | `python3 scripts/gui_app.py` |
 | `scripts/run_batch.py` | 汇总多组结果 | `python3 scripts/run_batch.py --output results/summary.csv` |
 | `scripts/train_error_model.py` | 附加题误差补偿模型训练 | `python3 scripts/train_error_model.py --output-dir results/ml_compensation` |
-| `scripts/create_submission_package.py` | 生成提交压缩包 | `python3 scripts/create_submission_package.py` |
 
 ## 7. 数据与结果说明
 
@@ -451,30 +441,16 @@ python3 scripts/train_error_model.py --output-dir results/ml_compensation
 | `reports/final_experiment_report.md` | 实验报告 |
 | `reports/final_test_report.md` | 测试报告 |
 | `reports/final_ai_extension_report.md` | 附加题报告 |
-| `reports/submission_checklist.md` | 提交前检查与压缩包说明 |
 | `reports/project_explanation_guide.md` | 本讲解与演示导览 |
 
-## 11. 最终提交文件
+## 11. GitHub 提交说明
 
-最终压缩包：
+项目已经按 GitHub 仓库提交方式整理：
 
-```text
-dist/beidou_positioning_submission.zip
-```
-
-提交清单：
-
-```text
-dist/submission_manifest.txt
-```
-
-压缩包已排除：
-
-- `.venv/`
-- `.git/`
-- `__pycache__/`
-- 原始 raw 压缩数据
-- 系统缓存文件
+- 提交源码、脚本、测试、报告、RINEX 解压数据和关键结果图；
+- 不提交 `.venv/`、`.git/`、`__pycache__/`、`dist/`、`data/datasets/*/raw/`；
+- 原始 raw 压缩数据保留在本地，但不进入仓库；
+- GitHub 仓库中保留 `data/datasets/*/rinex/`，保证他人克隆后可以直接运行主要测试。
 
 ## 12. 一句话总结
 

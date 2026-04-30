@@ -139,12 +139,17 @@ scripts/
   gui_app.py
   inspect_rinex.py
   plot_results.py
+  run_batch.py
   run_continuous.py
   run_spp.py
+  train_error_model.py
 reports/
-  design_report_template.md
-  experiment_report_template.md
-  test_report_template.md
+  requirements_audit.md
+  final_design_report.md
+  final_experiment_report.md
+  final_test_report.md
+  final_ai_extension_report.md
+  project_explanation_guide.md
 ```
 
 ## 实验模块封装

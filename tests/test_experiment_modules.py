@@ -291,21 +291,6 @@ class ExperimentModuleTests(unittest.TestCase):
         self.assertLess(metrics["compensated_3d_rms"], metrics["original_3d_rms"])
         self.assertLess(metrics["compensated_horiz_rms"], metrics["original_horiz_rms"])
 
-    def test_submission_file_list_excludes_runtime_and_raw_archives(self) -> None:
-        from submission import build_submission_file_list
-
-        files = build_submission_file_list(ROOT)
-        path_text = "\n".join(str(path) for path in files)
-
-        self.assertIn(Path("reports/final_experiment_report.md"), files)
-        self.assertIn(Path("src/positioning.py"), files)
-        self.assertIn(Path("results/summary.csv"), files)
-        self.assertNotIn(".venv", path_text)
-        self.assertNotIn(".git", path_text)
-        self.assertNotIn("__pycache__", path_text)
-        self.assertNotIn("/raw/", path_text)
-        self.assertFalse(any(path.suffix == ".gz" for path in files))
-
 
 if __name__ == "__main__":
     unittest.main()

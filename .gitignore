@@ -10,6 +10,7 @@ venv/
 
 dist/
 data/datasets/*/raw/
+results.csv
 
 *.tmp
 *.log
