@@ -96,6 +96,137 @@ python3 scripts/plot_results.py --csv results.csv --save-dir .
 python3 scripts/inspect_rinex.py --obs data/sample/bjfs1170.26o --nav data/sample/brdc1170.26n
 ```
 
+## 五个模块单独运行与展示
+以下命令用于课堂讲解、验收演示或单模块测试。若已激活虚拟环境，直接使用 `python3`；也可以将 `python3` 替换为 `.venv/bin/python`。
+
+### 模块1：RINEX 数据导入、解析与预处理
+GPS 示例数据：
+```bash
+python3 scripts/inspect_rinex.py \
+  --obs data/sample/bjfs1170.26o \
+  --nav data/sample/brdc1170.26n
+```
+
+RINEX 3 混合系统数据：
+```bash
+python3 scripts/inspect_rinex.py \
+  --obs data/datasets/twtf_2026_117_mixed/rinex/TWTF00TWN_R_20261170000_01D_30S_MO.rnx \
+  --nav data/datasets/twtf_2026_117_mixed/rinex/BRDM00DLR_S_20261170000_01D_MN.rnx
+```
+
+该模块主要展示 RINEX 版本、测站名、观测类型、历元数量、首历元卫星列表、导航星历数量和电离层参数。
+
+### 模块2：卫星位置、钟差与传播延迟改正
+模块2 是内部算法模块，可直接调用 `SatelliteCorrectionModule` 打印首历元可见卫星的改正结果：
+```bash
+python3 -c '
+import sys
+sys.path.append("src")
+from experiment_modules import RinexDataModule, SatelliteCorrectionModule
+
+d = RinexDataModule().load("data/sample/bjfs1170.26o", "data/sample/brdc1170.26n")
+m = SatelliteCorrectionModule(d.nav_header, d.nav_records)
+rows = m.visible_measurements(d.epochs[0], d.obs_header.approx_position_xyz, systems=("G",))
+
+for r in rows[:8]:
+    x, y, z = r.satellite_position_ecef
+    print(f"{r.prn} el={r.elevation_deg:.2f} az={r.azimuth_deg:.2f} "
+          f"raw={r.pseudorange_m:.3f} corrected={r.corrected_pseudorange_m:.3f} "
+          f"clk={r.satellite_clock_s*1e9:.3f}ns trop={r.troposphere_delay_m:.3f} "
+          f"iono={r.ionosphere_delay_m:.3f} xyz=({x:.1f},{y:.1f},{z:.1f})")
+'
+```
+
+该模块主要展示每颗卫星的高度角、方位角、原始伪距、改正后伪距、卫星钟差、对流层改正、电离层改正和卫星 ECEF 坐标。
+
+### 模块3：单历元单点定位解算
+GPS 单历元解算：
+```bash
+python3 scripts/run_spp.py \
+  --obs data/sample/bjfs1170.26o \
+  --nav data/sample/brdc1170.26n \
+  --epoch 0 \
+  --systems G
+```
+
+BDS 单系统解算：
+```bash
+python3 scripts/run_spp.py \
+  --obs data/datasets/twtf_2026_117_mixed/rinex/TWTF00TWN_R_20261170000_01D_30S_MO.rnx \
+  --nav data/datasets/twtf_2026_117_mixed/rinex/BRDM00DLR_S_20261170000_01D_MN.rnx \
+  --epoch 0 \
+  --systems C
+```
+
+GPS+BDS 联合解算：
+```bash
+python3 scripts/run_spp.py \
+  --obs data/datasets/twtf_2026_117_mixed/rinex/TWTF00TWN_R_20261170000_01D_30S_MO.rnx \
+  --nav data/datasets/twtf_2026_117_mixed/rinex/BRDM00DLR_S_20261170000_01D_MN.rnx \
+  --epoch 0 \
+  --systems G,C
+```
+
+该模块主要展示 ECEF 坐标、经纬高 BLH、接收机钟差、使用卫星数、PDOP 和 GDOP。
+
+### 模块4：连续定位、误差统计与绘图
+连续定位并保存 CSV 与图片：
+```bash
+python3 scripts/run_continuous.py \
+  --obs data/sample/bjfs1170.26o \
+  --nav data/sample/brdc1170.26n \
+  --systems G \
+  --csv results/demo/results.csv \
+  --plot \
+  --save-plots results/demo
+```
+
+只根据已有 CSV 重新生成图表：
+```bash
+python3 scripts/plot_results.py \
+  --csv results/demo/results.csv \
+  --save-dir results/demo
+```
+
+该模块主要展示连续历元数量、水平误差 RMS/Mean/Max、三维误差 RMS/Mean/Max、误差/DOP/卫星数曲线和轨迹图。
+
+### 模块5：完整软件系统整合与 GUI 演示
+启动图形界面：
+```bash
+python3 scripts/gui_app.py
+```
+
+GUI 推荐演示参数：
+```text
+Obs file: data/sample/bjfs1170.26o
+Nav file: data/sample/brdc1170.26n
+Output CSV: results/gui_demo.csv
+Step: 1
+Max epochs: 200
+Max iterations: 8
+Error threshold: 0.01
+Elevation mask: 10
+GNSS systems: G
+```
+
+操作顺序：
+```text
+Run -> Plot -> Replay
+```
+
+该模块主要展示 RINEX 数据导入、解算参数设置、定位结果实时显示、误差曲线查看和定位轨迹回放。
+
+### 批量结果汇总
+汇总所有已生成的多站点、多系统结果：
+```bash
+python3 scripts/run_batch.py --output results/summary.csv
+```
+
+输出文件：
+```text
+results/summary.csv
+```
+
 ## GUI
 启动 GUI：
 ```bash
