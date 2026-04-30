@@ -35,6 +35,10 @@ def main() -> None:
             lat.append(float(row["lat"]))
             lon.append(float(row["lon"]))
 
+    if not times:
+        print(f"No rows in {args.csv}; skipped plotting")
+        return
+
     if args.save_dir:
         err_path = f"{args.save_dir}/error_dop.png"
         traj_path = f"{args.save_dir}/trajectory.png"

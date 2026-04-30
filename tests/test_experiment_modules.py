@@ -4,6 +4,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import os
+import gzip
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,6 +15,368 @@ if str(SRC) not in sys.path:
 
 
 class ExperimentModuleTests(unittest.TestCase):
+    def test_rinex3_spaced_satellite_ids_are_normalized(self) -> None:
+        from rinex_obs import parse_rinex_obs
+
+        content = "\n".join(
+            [
+                "     3.03           OBSERVATION DATA    M: Mixed            RINEX VERSION / TYPE",
+                f"{'G    1 C1C':<60}SYS / # / OBS TYPES",
+                f"{'C    1 C2I':<60}SYS / # / OBS TYPES",
+                f"{'  2021     5    17     2    33   13.0000000     GPS':<60}TIME OF FIRST OBS",
+                "                                                            END OF HEADER",
+                "> 2021  5 17  2 33 13.0000000  0  2",
+                "G 1  21642195.014",
+                "C 3  36582024.261",
+                "",
+            ]
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            obs_path = Path(tmp) / "spaced_ids.obs"
+            obs_path.write_text(content, encoding="utf-8")
+            header, epochs = parse_rinex_obs(obs_path)
+
+        self.assertEqual(header.time_first_obs.year, 2021)
+        self.assertIn("G01", epochs[0].sat_obs)
+        self.assertIn("C03", epochs[0].sat_obs)
+        self.assertNotIn("G 1", epochs[0].sat_obs)
+        self.assertNotIn("C 3", epochs[0].sat_obs)
+
+    def test_rinex_obs_parser_reads_gzip_and_rejects_hatanaka(self) -> None:
+        from rinex_obs import parse_rinex_obs
+
+        content = "\n".join(
+            [
+                "     3.03           OBSERVATION DATA    M: Mixed            RINEX VERSION / TYPE",
+                f"{'G    1 C1C':<60}SYS / # / OBS TYPES",
+                f"{'  2021     5    17     2    33   13.0000000     GPS':<60}TIME OF FIRST OBS",
+                "                                                            END OF HEADER",
+                "> 2021  5 17  2 33 13.0000000  0  1",
+                "G 1  21642195.014",
+                "",
+            ]
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            obs_gz = tmp_path / "sample.obs.gz"
+            with gzip.open(obs_gz, "wt", encoding="utf-8") as f:
+                f.write(content)
+
+            header, epochs = parse_rinex_obs(obs_gz)
+            self.assertEqual(header.version, 3.03)
+            self.assertEqual(len(epochs), 1)
+
+            crx_gz = tmp_path / "sample.crx.gz"
+            with gzip.open(crx_gz, "wt", encoding="utf-8") as f:
+                f.write(content)
+            with self.assertRaisesRegex(ValueError, "Hatanaka"):
+                parse_rinex_obs(crx_gz)
+
+    def test_rinex3_short_observation_line_does_not_consume_next_epoch(self) -> None:
+        from rinex_obs import parse_rinex_obs
+
+        content = "\n".join(
+            [
+                "     3.03           OBSERVATION DATA    M: Mixed            RINEX VERSION / TYPE",
+                f"{'G   15 C1C C2W C2X C5X L1C L2W L2X L5X S1C S2W S2X S5X':<60}SYS / # / OBS TYPES",
+                f"{'      C6X L6X S6X':<60}SYS / # / OBS TYPES",
+                f"{'  2026     4    27     0     0    0.0000000     GPS':<60}TIME OF FIRST OBS",
+                "                                                            END OF HEADER",
+                "> 2026 04 27 00 00 00.0000000  0  1",
+                "G01" + "".join(f"{21642195.014 + idx:14.3f}  " for idx in range(14)),
+                "> 2026 04 27 00 00 30.0000000  0  1",
+                "G01" + "".join(f"{21642196.014 + idx:14.3f}  " for idx in range(14)),
+                "",
+            ]
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            obs_path = Path(tmp) / "short.obs"
+            obs_path.write_text(content, encoding="utf-8")
+            _, epochs = parse_rinex_obs(obs_path)
+
+        self.assertEqual(len(epochs), 2)
+        self.assertEqual(epochs[0].sat_obs["G01"]["C1C"], 21642195.014)
+
+    def test_rinex_nav_parser_reads_gzip(self) -> None:
+        from rinex_nav import parse_rinex_nav
+
+        content = "\n".join(
+            [
+                "     3.04           N: GNSS NAV DATA    M: MIXED            RINEX VERSION / TYPE",
+                "GPSA  1.0D-08 2.0D-08 3.0D-08 4.0D-08                  IONOSPHERIC CORR",
+                "                                                            END OF HEADER",
+                "",
+            ]
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            nav_gz = Path(tmp) / "nav.rnx.gz"
+            with gzip.open(nav_gz, "wt", encoding="utf-8") as f:
+                f.write(content)
+            header, records = parse_rinex_nav(nav_gz)
+
+        self.assertEqual(header.ion_alpha, (1e-8, 2e-8, 3e-8, 4e-8))
+        self.assertEqual(records, [])
+
+    def test_redundancy_runner_classifies_ok_warning_and_expected_error(self) -> None:
+        from redundancy import RedundancyCase, run_redundancy_cases
+
+        with tempfile.TemporaryDirectory() as tmp:
+            crx_gz = Path(tmp) / "sample.crx.gz"
+            with gzip.open(crx_gz, "wt", encoding="utf-8") as f:
+                f.write("placeholder")
+            rows = run_redundancy_cases(
+                [
+                    RedundancyCase(
+                        name="sample_ok",
+                        obs_path=ROOT / "data" / "sample" / "bjfs1170.26o",
+                        nav_path=ROOT / "data" / "sample" / "brdc1170.26n",
+                        systems=("G",),
+                        max_epochs=1,
+                        min_solutions=1,
+                    ),
+                    RedundancyCase(
+                        name="sample_no_selected_system",
+                        obs_path=ROOT / "data" / "sample" / "bjfs1170.26o",
+                        nav_path=ROOT / "data" / "sample" / "brdc1170.26n",
+                        systems=("C",),
+                        max_epochs=1,
+                        min_solutions=1,
+                    ),
+                    RedundancyCase(
+                        name="hatanka_expected",
+                        obs_path=crx_gz,
+                        nav_path=ROOT / "data" / "sample" / "brdc1170.26n",
+                        systems=("G",),
+                        max_epochs=1,
+                        expect_error="Hatanaka",
+                    ),
+                ]
+            )
+
+        by_name = {row["name"]: row for row in rows}
+        self.assertEqual(by_name["sample_ok"]["status"], "ok")
+        self.assertEqual(by_name["sample_no_selected_system"]["status"], "warning")
+        self.assertEqual(by_name["hatanka_expected"]["status"], "expected_error")
+
+    def test_plotting_uses_scatter_points_not_lines(self) -> None:
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        from plotting import plot_error_and_dop, plot_trajectory
+
+        original_show = plt.show
+        plt.show = lambda: None
+        try:
+            self.assertTrue(plot_error_and_dop([0, 1], [1.0, 2.0], [2.0, 3.0], [1.5, 1.6], sat_counts=[8, 9]))
+            error_fig = plt.gcf()
+            self.assertGreater(sum(len(ax.collections) for ax in error_fig.axes), 0)
+            self.assertEqual(sum(len(ax.lines) for ax in error_fig.axes), 0)
+            plt.close(error_fig)
+
+            self.assertTrue(plot_trajectory([39.0, 39.1], [116.0, 116.1]))
+            traj_fig = plt.gcf()
+            self.assertGreater(sum(len(ax.collections) for ax in traj_fig.axes), 0)
+            self.assertEqual(sum(len(ax.lines) for ax in traj_fig.axes), 0)
+            plt.close(traj_fig)
+        finally:
+            plt.show = original_show
+
+    def test_pipeline_returns_empty_result_when_no_selected_system_can_solve(self) -> None:
+        from pipeline import run_continuous_pipeline
+
+        obs_header, solutions, errors, stats = run_continuous_pipeline(
+            str(ROOT / "data" / "sample" / "bjfs1170.26o"),
+            str(ROOT / "data" / "sample" / "brdc1170.26n"),
+            systems=("C",),
+            max_epochs=3,
+        )
+
+        self.assertEqual(obs_header.marker_name, "BJFS")
+        self.assertEqual(solutions, [])
+        self.assertEqual(errors, [])
+        self.assertEqual(stats["solution_epochs"], 0)
+        self.assertGreater(stats["skipped_epochs"], 0)
+
+    def test_continuous_cli_with_plot_handles_no_solutions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            env = os.environ.copy()
+            env["MPLCONFIGDIR"] = str(tmp_path / "mplconfig")
+            env["XDG_CACHE_HOME"] = str(tmp_path / "xdgcache")
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "scripts/run_continuous.py",
+                    "--obs",
+                    "data/sample/bjfs1170.26o",
+                    "--nav",
+                    "data/sample/brdc1170.26n",
+                    "--systems",
+                    "C",
+                    "--max-epochs",
+                    "1",
+                    "--csv",
+                    str(tmp_path / "empty.csv"),
+                    "--plot",
+                    "--save-plots",
+                    str(tmp_path / "plots"),
+                ],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+                env=env,
+            )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Solutions: 0", result.stdout)
+        self.assertIn("No valid solutions", result.stdout)
+
+    def test_plot_results_cli_handles_empty_csv(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            csv_path = tmp_path / "empty.csv"
+            csv_path.write_text("time,lat,lon,pdop,used_sats,horiz,three_d\n", encoding="utf-8")
+            env = os.environ.copy()
+            env["MPLCONFIGDIR"] = str(tmp_path / "mplconfig")
+            env["XDG_CACHE_HOME"] = str(tmp_path / "xdgcache")
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "scripts/plot_results.py",
+                    "--csv",
+                    str(csv_path),
+                    "--save-dir",
+                    str(tmp_path / "plots"),
+                ],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+                env=env,
+            )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("No rows", result.stdout)
+
+    def test_inspect_cli_reports_hatanaka_without_traceback(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            crx_gz = Path(tmp) / "sample.crx.gz"
+            with gzip.open(crx_gz, "wt", encoding="utf-8") as f:
+                f.write("placeholder")
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "scripts/inspect_rinex.py",
+                    "--obs",
+                    str(crx_gz),
+                    "--nav",
+                    "data/sample/brdc1170.26n",
+                ],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Hatanaka", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_spp_cli_reports_invalid_input_without_traceback(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "scripts/run_spp.py",
+                "--obs",
+                "missing.obs",
+                "--nav",
+                "data/sample/brdc1170.26n",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Error:", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_continuous_cli_reports_invalid_input_without_traceback(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "scripts/run_continuous.py",
+                "--obs",
+                "missing.obs",
+                "--nav",
+                "data/sample/brdc1170.26n",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Error:", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_urban_nav_inventory_detects_bds_observation_files(self) -> None:
+        from data_inventory import summarize_dataset_directory
+
+        urban_root = ROOT / "1_UrbanNav-HK-Medium-Urban-1"
+        if not urban_root.exists():
+            self.skipTest("UrbanNav dataset is not present")
+
+        summary = summarize_dataset_directory(urban_root)
+        gc = next(row for row in summary["observations"] if row["receiver"] == "ublox.m8t.GC")
+
+        self.assertEqual(summary["dataset_id"], "urban_nav_hk_medium_urban_1")
+        self.assertIn("C", gc["systems"])
+        self.assertIn("G", gc["systems"])
+        self.assertGreater(gc["epochs"], 0)
+        self.assertGreater(gc["bds_epochs"], 0)
+        self.assertFalse(summary["has_navigation"])
+
+    def test_inventory_supports_managed_dataset_layout(self) -> None:
+        from data_inventory import summarize_dataset_directory
+
+        content = "\n".join(
+            [
+                "     3.03           OBSERVATION DATA    M: Mixed            RINEX VERSION / TYPE",
+                f"{'C    1 C2I':<60}SYS / # / OBS TYPES",
+                f"{'  2021     5    17     2    33   13.0000000     GPS':<60}TIME OF FIRST OBS",
+                "                                                            END OF HEADER",
+                "> 2021  5 17  2 33 13.0000000  0  1",
+                "C 3  36582024.261",
+                "",
+            ]
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "urban_nav_hk_medium_urban_1"
+            rinex_dir = root / "rinex"
+            nmea_dir = root / "nmea"
+            rinex_dir.mkdir(parents=True)
+            nmea_dir.mkdir(parents=True)
+            (rinex_dir / "toy.receiver.obs").write_text(content, encoding="utf-8")
+            (rinex_dir / "BRDM00DLR_S_20211370000_01D_MN.rnx").write_text("", encoding="utf-8")
+            (nmea_dir / "toy.receiver.nmea").write_text("$GNGGA\n", encoding="utf-8")
+
+            summary = summarize_dataset_directory(root)
+
+        self.assertTrue(summary["has_navigation"])
+        self.assertEqual(summary["observations"][0]["receiver"], "toy.receiver")
+        self.assertTrue(summary["observations"][0]["has_nmea"])
+
     def test_default_inspection_command_uses_bundled_data(self) -> None:
         result = subprocess.run(
             [sys.executable, "scripts/inspect_rinex.py"],

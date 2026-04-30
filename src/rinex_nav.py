@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 from models import NavHeader, NavRecord
+from rinex_io import read_rinex_text
 from utils import rinex_float, rinex_int
 
 
@@ -45,7 +46,7 @@ def _parse_header_four(line: str) -> Tuple[float, float, float, float]:
 
 
 def parse_rinex_nav(path: str | Path) -> Tuple[NavHeader, List[NavRecord]]:
-    lines = Path(path).read_text(encoding="utf-8", errors="ignore").splitlines()
+    lines = read_rinex_text(path, kind="nav")
     i = 0
     version = 0.0
     ion_alpha: Optional[Tuple[float, float, float, float]] = None

@@ -32,6 +32,8 @@ The main index is:
 | `daej_2026_117_gps` | RINEX 2.11 | GPS | Full GPS run OK |
 | `hksl_2026_117_gps` | RINEX 2.11 | GPS | Full GPS run OK |
 | `twtf_2026_117_mixed` | RINEX 3.04 | GPS/BDS/Galileo/GLONASS/QZSS/SBAS | Mixed parse OK; GPS-only run OK; BDS-only pending |
+| `urban_nav_hk_medium_urban_1` | RINEX 3.03 | GPS/BDS/Galileo/GLONASS/QZSS/SBAS | Urban dynamic dataset; BDS and GPS+BDS 200-epoch runs OK |
+| `redundancy_stress_2026_117` | RINEX 2.11/3.05 compressed | GPS and GPS/BDS | Robustness dataset for `.o.gz`, `.rnx.gz`, and Hatanaka warning tests |
 
 ## Result Outputs
 
@@ -45,6 +47,22 @@ Generated CSV and plots are stored under:
 | `results/datasets/daej_2026_117_gps` | `2.586 / 1.853 / 12.215` | `4.220 / 3.488 / 14.292` |
 | `results/datasets/hksl_2026_117_gps` | `4.005 / 3.448 / 9.780` | `6.048 / 5.276 / 15.305` |
 | `results/datasets/twtf_2026_117_gps_from_mixed` | `6.254 / 4.920 / 14.966` | `7.722 / 6.468 / 20.000` |
+| `results/datasets/urban_nav_hk_medium_urban_1_bds` | `621.689 / 592.237 / 824.339` | `625.705 / 596.388 / 847.241` |
+| `results/datasets/urban_nav_hk_medium_urban_1_gps_bds` | `617.069 / 586.390 / 817.517` | `620.077 / 590.190 / 817.620` |
+
+Note: UrbanNav is a moving urban dataset. The error statistics above use the RINEX approximate position as the reference, so they mainly verify processing stability and multi-system availability rather than static-station precision.
+
+Robustness checks are stored under:
+
+`results/redundancy_tests/summary.csv`
+
+The current redundancy test covers:
+- bundled RINEX 2 GPS sample;
+- downloaded compressed RINEX 2 `.26o.gz/.26n.gz`;
+- downloaded compressed RINEX 3 mixed `.rnx.gz` observation/navigation;
+- UrbanNav dynamic GPS+BDS data;
+- no-solution warning path;
+- Hatanaka `.crx.gz` conversion warning path.
 
 ## Example Commands
 
@@ -63,4 +81,20 @@ Generated CSV and plots are stored under:
   --nav data/datasets/twtf_2026_117_mixed/rinex/BRDM00DLR_S_20261170000_01D_MN.rnx \
   --systems G \
   --csv results/datasets/twtf_2026_117_gps_from_mixed/results.csv
+```
+
+```bash
+.venv/bin/python scripts/run_continuous.py \
+  --obs data/datasets/urban_nav_hk_medium_urban_1/rinex/UrbanNav-HK-Medium-Urban-1.ublox.m8t.GC.obs \
+  --nav data/datasets/urban_nav_hk_medium_urban_1/rinex/BRDM00DLR_S_20211370000_01D_MN.rnx \
+  --systems G,C \
+  --max-epochs 200 \
+  --csv results/datasets/urban_nav_hk_medium_urban_1_gps_bds/results.csv \
+  --plot --save-plots results/datasets/urban_nav_hk_medium_urban_1_gps_bds
+```
+
+```bash
+.venv/bin/python scripts/run_redundancy_tests.py \
+  --max-epochs 20 \
+  --output results/redundancy_tests/summary.csv
 ```

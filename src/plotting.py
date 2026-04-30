@@ -27,23 +27,26 @@ def plot_error_and_dop(
     three_d_list = list(three_d)
     pdop_list = list(pdop)
     sat_count_list = list(sat_counts) if sat_counts is not None else None
+    if not time_list:
+        print("No positioning data to plot")
+        return False
 
     row_count = 3 if sat_count_list is not None else 2
     fig, axes = plt.subplots(row_count, 1, figsize=(10, 3 * row_count), sharex=True)
-    axes[0].plot(time_list, horiz_list, label="Horizontal error (m)")
-    axes[0].plot(time_list, three_d_list, label="3D error (m)")
+    axes[0].scatter(time_list, horiz_list, label="Horizontal error (m)", s=12, alpha=0.75)
+    axes[0].scatter(time_list, three_d_list, label="3D error (m)", s=12, alpha=0.75)
     axes[0].set_ylabel("Error (m)")
     axes[0].legend()
     axes[0].grid(True, linestyle="--", alpha=0.5)
 
-    axes[1].plot(time_list, pdop_list, label="PDOP")
+    axes[1].scatter(time_list, pdop_list, label="PDOP", s=12, alpha=0.75)
     axes[1].set_xlabel("Epoch index")
     axes[1].set_ylabel("DOP")
     axes[1].grid(True, linestyle="--", alpha=0.5)
     axes[1].legend()
 
     if sat_count_list is not None:
-        axes[2].plot(time_list, sat_count_list, label="Visible/used satellites")
+        axes[2].scatter(time_list, sat_count_list, label="Visible/used satellites", s=12, alpha=0.75)
         axes[2].set_xlabel("Epoch index")
         axes[2].set_ylabel("Sat count")
         axes[2].grid(True, linestyle="--", alpha=0.5)
@@ -77,9 +80,12 @@ def plot_trajectory(
 
     lat_list = list(lat)
     lon_list = list(lon)
+    if not lat_list or not lon_list:
+        print("No trajectory data")
+        return False
 
     fig, ax = plt.subplots(1, 1, figsize=(6, 6))
-    ax.plot(lon_list, lat_list, linewidth=1.0)
+    ax.scatter(lon_list, lat_list, s=12, alpha=0.75)
     ax.set_xlabel("Longitude (deg)")
     ax.set_ylabel("Latitude (deg)")
     ax.grid(True, linestyle="--", alpha=0.5)
@@ -120,8 +126,8 @@ def playback_trajectory(
     ax.grid(True, linestyle="--", alpha=0.5)
     ax.set_aspect("equal", adjustable="box")
 
-    line, = ax.plot([], [], linewidth=1.0)
-    point, = ax.plot([], [], marker="o", markersize=4)
+    history = ax.scatter([], [], s=10, alpha=0.45)
+    point = ax.scatter([], [], s=28)
 
     def init() -> tuple:
         min_lon = min(lon_list)
@@ -136,14 +142,14 @@ def playback_trajectory(
             max_lat += 1e-5
         ax.set_xlim(min_lon, max_lon)
         ax.set_ylim(min_lat, max_lat)
-        line.set_data([], [])
-        point.set_data([], [])
-        return line, point
+        history.set_offsets([(float("nan"), float("nan"))])
+        point.set_offsets([(float("nan"), float("nan"))])
+        return history, point
 
     def update(frame: int) -> tuple:
-        line.set_data(lon_list[: frame + 1], lat_list[: frame + 1])
-        point.set_data(lon_list[frame], lat_list[frame])
-        return line, point
+        history.set_offsets(list(zip(lon_list[: frame + 1], lat_list[: frame + 1])))
+        point.set_offsets([(lon_list[frame], lat_list[frame])])
+        return history, point
 
     anim = FuncAnimation(fig, update, frames=len(lat_list), init_func=init, interval=interval_ms, blit=True)
     plt.show()

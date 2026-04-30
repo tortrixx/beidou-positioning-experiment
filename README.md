@@ -9,7 +9,7 @@
 - GPS、BDS 与 GPS+BDS 联合迭代最小二乘 SPP
 - 高度角加权最小二乘、残差门限剔除与残差诊断
 - 连续定位与 RMS/均值/最大误差统计
-- CSV 导出与绘图（误差/DOP、轨迹）
+- CSV 导出与散点绘图（误差/DOP、轨迹）
 - PyQt GUI 实时显示与轨迹回放
 
 ## 依赖环境
@@ -36,6 +36,12 @@ python3 -m pip install -r requirements.txt
 - `data/datasets/daej_2026_117_gps`
 - `data/datasets/hksl_2026_117_gps`
 - `data/datasets/twtf_2026_117_mixed`
+- `data/datasets/urban_nav_hk_medium_urban_1`
+- `data/datasets/redundancy_stress_2026_117`
+
+`urban_nav_hk_medium_urban_1` 是香港城市动态数据，包含多设备 `.obs/.nmea` 文件与下载整理后的 2021-05-17 mixed navigation 星历。它适合展示北斗、多系统解析和复杂数据容错；因接收机处于运动环境，使用 RINEX 头文件近似坐标统计出的误差不能等同于静态测站精度。
+
+`redundancy_stress_2026_117` 是冗余测试数据，包含下载的 `.26o.gz/.26n.gz`、`.rnx.gz` 和 Hatanaka `.crx.gz` 场景，用于模拟验收时遇到不同压缩格式、不同 RINEX 版本和数据过少/无解等情况。
 
 ## 快速开始（命令行）
 ```bash
@@ -74,6 +80,30 @@ python3 scripts/run_continuous.py \
   --systems G,C \
   --csv results/datasets/twtf_2026_117_gps_bds/results.csv \
   --plot --save-plots results/datasets/twtf_2026_117_gps_bds
+```
+
+UrbanNav 城市数据 GPS+BDS 200 历元解算：
+```bash
+python3 scripts/run_continuous.py \
+  --obs data/datasets/urban_nav_hk_medium_urban_1/rinex/UrbanNav-HK-Medium-Urban-1.ublox.m8t.GC.obs \
+  --nav data/datasets/urban_nav_hk_medium_urban_1/rinex/BRDM00DLR_S_20211370000_01D_MN.rnx \
+  --systems G,C \
+  --max-epochs 200 \
+  --csv results/datasets/urban_nav_hk_medium_urban_1_gps_bds/results.csv \
+  --plot --save-plots results/datasets/urban_nav_hk_medium_urban_1_gps_bds
+```
+
+整理并统计 UrbanNav 数据：
+```bash
+python3 scripts/summarize_urban_nav.py \
+  --root data/datasets/urban_nav_hk_medium_urban_1
+```
+
+运行冗余/容错测试：
+```bash
+python3 scripts/run_redundancy_tests.py \
+  --max-epochs 20 \
+  --output results/redundancy_tests/summary.csv
 ```
 
 汇总所有已生成结果：
@@ -115,6 +145,13 @@ python3 scripts/inspect_rinex.py \
 ```
 
 该模块主要展示 RINEX 版本、测站名、观测类型、历元数量、首历元卫星列表、导航星历数量和电离层参数。
+
+UrbanNav 北斗/GPS 数据：
+```bash
+python3 scripts/inspect_rinex.py \
+  --obs data/datasets/urban_nav_hk_medium_urban_1/rinex/UrbanNav-HK-Medium-Urban-1.ublox.m8t.GC.obs \
+  --nav data/datasets/urban_nav_hk_medium_urban_1/rinex/BRDM00DLR_S_20211370000_01D_MN.rnx
+```
 
 ### 模块2：卫星位置、钟差与传播延迟改正
 模块2 是内部算法模块，可直接调用 `SatelliteCorrectionModule` 打印首历元可见卫星的改正结果：
@@ -188,7 +225,7 @@ python3 scripts/plot_results.py \
   --save-dir results/demo
 ```
 
-该模块主要展示连续历元数量、水平误差 RMS/Mean/Max、三维误差 RMS/Mean/Max、误差/DOP/卫星数曲线和轨迹图。
+该模块主要展示连续历元数量、水平误差 RMS/Mean/Max、三维误差 RMS/Mean/Max、误差/DOP/卫星数散点图和轨迹散点图。
 
 ### 模块5：完整软件系统整合与 GUI 演示
 启动图形界面：
@@ -243,7 +280,7 @@ GUI 参数说明：
 
 按钮：
 - Run：开始连续定位
-- Plot：显示误差/DOP 与轨迹图
+- Plot：显示误差/DOP 与轨迹散点图
 - Replay：轨迹回放
 
 ## 输出结果
@@ -257,11 +294,14 @@ src/
   atmosphere.py
   constants.py
   coords.py
+  data_inventory.py
   experiment_modules.py
   models.py
   pipeline.py
   plotting.py
   positioning.py
+  redundancy.py
+  rinex_io.py
   rinex_nav.py
   rinex_obs.py
   satellite.py
@@ -272,7 +312,9 @@ scripts/
   plot_results.py
   run_batch.py
   run_continuous.py
+  run_redundancy_tests.py
   run_spp.py
+  summarize_urban_nav.py
   train_error_model.py
 reports/
   requirements_audit.md
@@ -288,7 +330,7 @@ reports/
 - 模块1 `RinexDataModule`：RINEX 观测/导航解析、文件校验、基础观测预处理。
 - 模块2 `SatelliteCorrectionModule`：广播星历卫星位置、钟差、地球自转、对流层和电离层改正。
 - 模块3 `SinglePointPositioningModule`：可见卫星筛选、迭代最小二乘定位、PDOP/GDOP 输出。
-- 模块4 `ContinuousAnalysisModule`：连续定位误差统计、CSV 导出、误差/DOP 与轨迹图生成。
+- 模块4 `ContinuousAnalysisModule`：连续定位误差统计、CSV 导出、误差/DOP 与轨迹散点图生成。
 - 模块5 `SoftwareSystemModule`：整合“数据输入 -> 预处理 -> 解算 -> 分析 -> 输出”的完整自动化流程。
 
 ## 说明与限制

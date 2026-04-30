@@ -192,6 +192,8 @@ class MainWindow(QWidget):
     def _start_run(self) -> None:
         self.run_btn.setEnabled(False)
         self.plot_btn.setEnabled(False)
+        self.replay_btn.setEnabled(False)
+        self._last_log_count = 0
         self._append_log("Running...")
 
         systems = [s.strip() for s in self.systems_edit.text().split(",") if s.strip()]
@@ -221,6 +223,22 @@ class MainWindow(QWidget):
     def _on_finished(self, obs_header, solutions, errors, stats) -> None:
         self._solutions = solutions
         self._errors = errors
+        if not solutions:
+            skip_reasons = stats.get("skip_reasons", {})
+            reason_text = "; ".join(f"{reason}: {count}" for reason, count in skip_reasons.items())
+            self._append_log(
+                "No valid positioning solutions. "
+                f"Processed epochs: {stats.get('processed_epochs', 0)}, "
+                f"skipped epochs: {stats.get('skipped_epochs', 0)}"
+            )
+            if reason_text:
+                self._append_log(f"Skip reasons: {reason_text}")
+            self.run_btn.setEnabled(True)
+            self.plot_btn.setEnabled(False)
+            self.replay_btn.setEnabled(False)
+            self.worker = None
+            self.thread.quit()
+            return
         self._append_log(
             f"Solutions: {len(solutions)} | "
             f"Horiz RMS/Mean/Max: {stats['horiz_rms']:.3f}/{stats['horiz_mean']:.3f}/{stats['horiz_max']:.3f} | "
@@ -310,8 +328,8 @@ class MainWindow(QWidget):
         ax.set_xlim(min_lon, max_lon)
         ax.set_ylim(min_lat, max_lat)
 
-        line, = ax.plot([], [], linewidth=1.0)
-        point, = ax.plot([], [], marker="o", markersize=4)
+        history = ax.scatter([], [], s=10, alpha=0.45)
+        point = ax.scatter([], [], s=28)
         canvas.draw()
 
         self._replay_index = 0
@@ -324,8 +342,8 @@ class MainWindow(QWidget):
                     self._replay_timer.stop()
                     return
                 idx = self._replay_index
-                line.set_data(lon[: idx + 1], lat[: idx + 1])
-                point.set_data([lon[idx]], [lat[idx]])
+                history.set_offsets(list(zip(lon[: idx + 1], lat[: idx + 1])))
+                point.set_offsets([(lon[idx], lat[idx])])
                 canvas.draw_idle()
                 self._replay_index += 1
             except Exception as exc:

@@ -37,13 +37,16 @@ def run_continuous_pipeline(
 
     solutions: List[PositionSolution] = []
     init_xyz = obs_header.approx_position_xyz
-    count = 0
+    processed_count = 0
+    skipped_count = 0
+    skip_reasons: Dict[str, int] = {}
 
     for idx, epoch in enumerate(epochs):
         if idx % step != 0:
             continue
-        if max_epochs and count >= max_epochs:
+        if max_epochs and processed_count >= max_epochs:
             break
+        processed_count += 1
         try:
             sol = single_point_position(
                 epoch,
@@ -57,19 +60,26 @@ def run_continuous_pipeline(
                 residual_gate_m=residual_gate_m,
                 time_system=obs_header.time_system,
             )
-        except ValueError:
+        except ValueError as exc:
+            skipped_count += 1
+            reason = str(exc) or exc.__class__.__name__
+            skip_reasons[reason] = skip_reasons.get(reason, 0) + 1
             continue
         solutions.append(sol)
         if progress is not None:
-            progress(idx, count + 1, sol)
+            progress(idx, len(solutions), sol)
         init_xyz = sol.position_ecef
-        count += 1
 
-    if not solutions:
-        raise ValueError("No valid solutions")
-
-    errors = compute_errors(solutions, obs_header.approx_position_xyz)
+    errors = compute_errors(solutions, obs_header.approx_position_xyz) if solutions else []
     stats = summarize_errors(errors)
+    stats.update(
+        {
+            "processed_epochs": processed_count,
+            "solution_epochs": len(solutions),
+            "skipped_epochs": skipped_count,
+            "skip_reasons": skip_reasons,
+        }
+    )
     return obs_header, solutions, errors, stats
 
 

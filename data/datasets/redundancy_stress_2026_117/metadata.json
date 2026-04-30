@@ -1,0 +1,36 @@
+{
+  "dataset_id": "redundancy_stress_2026_117",
+  "purpose": "Extra robustness dataset for pre-submission instance testing",
+  "date": "2026-04-27",
+  "source": "ftp://igs.gnsswhu.cn/pub/gps/data/daily/2026/117/",
+  "files": [
+    {
+      "path": "data/datasets/redundancy_stress_2026_117/rinex/chan1170.26o.gz",
+      "type": "RINEX 2.11 compressed observation",
+      "systems": "GPS"
+    },
+    {
+      "path": "data/datasets/redundancy_stress_2026_117/rinex/brdc1170.26n.gz",
+      "type": "RINEX 2.11 compressed GPS navigation",
+      "systems": "GPS"
+    },
+    {
+      "path": "data/datasets/redundancy_stress_2026_117/rinex/AUCK00NZL_R_20261170000_01D_30S_MO.rnx.gz",
+      "type": "RINEX 3.05 compressed mixed observation",
+      "systems": "GPS/BDS/Galileo/GLONASS/QZSS"
+    },
+    {
+      "path": "data/datasets/redundancy_stress_2026_117/rinex/BRDM00DLR_S_20261170000_01D_MN.rnx.gz",
+      "type": "RINEX 3.05 compressed mixed navigation",
+      "systems": "GPS/BDS/Galileo/GLONASS/QZSS/SBAS"
+    }
+  ],
+  "raw_only_files": [
+    {
+      "path": "data/datasets/redundancy_stress_2026_117/raw/ABMF00GLP_R_20211370000_01D_30S_MO.crx.gz",
+      "type": "Hatanaka-compressed observation",
+      "expected_behavior": "Program should report that conversion to RINEX is required instead of crashing"
+    }
+  ],
+  "latest_test_summary": "results/redundancy_tests/summary.csv"
+}

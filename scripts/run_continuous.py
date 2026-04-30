@@ -54,6 +54,17 @@ def main() -> None:
     )
 
     print(f"CSV saved: {args.csv}")
+    if not solutions:
+        print(
+            "No valid solutions; skipped plotting. "
+            f"Processed epochs: {stats.get('processed_epochs', 0)}, "
+            f"skipped epochs: {stats.get('skipped_epochs', 0)}"
+        )
+        skip_reasons = stats.get("skip_reasons", {})
+        if skip_reasons:
+            for reason, count in skip_reasons.items():
+                print(f"Skip reason: {reason} ({count})")
+        return
 
     if args.plot:
         times = list(range(len(solutions)))
@@ -79,4 +90,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (FileNotFoundError, ValueError, RuntimeError) as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        raise SystemExit(1)

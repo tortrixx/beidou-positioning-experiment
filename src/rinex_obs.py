@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from models import ObsEpoch, ObsHeader
+from rinex_io import read_rinex_text
 from utils import rinex_float, rinex_int
 
 
@@ -31,6 +32,8 @@ def _parse_obs_values(
         if idx >= len(lines):
             break
         line = lines[idx]
+        if idx > start_index and line.startswith(">"):
+            break
         if idx > start_index and _looks_like_satellite_record(line):
             break
         start = offset if idx == start_index else 0
@@ -48,12 +51,25 @@ def _parse_obs_values(
 
 
 def _looks_like_satellite_record(line: str) -> bool:
-    sat = line[0:3]
+    sat = _normalize_satellite_id(line[0:3])
     return len(sat) == 3 and sat[0].isalpha() and sat[1:].isdigit()
 
 
+def _normalize_satellite_id(raw: str) -> str:
+    sat = raw.strip()
+    if not sat:
+        return sat
+    system = sat[0]
+    if not system.isalpha():
+        return sat
+    digits = "".join(ch for ch in sat[1:] if ch.isdigit())
+    if not digits:
+        return sat
+    return f"{system}{int(digits):02d}"
+
+
 def parse_rinex_obs(path: str | Path) -> Tuple[ObsHeader, List[ObsEpoch]]:
-    lines = Path(path).read_text(encoding="utf-8", errors="ignore").splitlines()
+    lines = read_rinex_text(path, kind="obs")
     i = 0
     version = 0.0
     marker_name = ""
@@ -102,7 +118,12 @@ def parse_rinex_obs(path: str | Path) -> Tuple[ObsHeader, List[ObsEpoch]]:
             hour = int(line[18:24])
             minute = int(line[24:30])
             second = float(line[30:43])
-            time_first_obs = _parse_time_fields(year, month, day, hour, minute, second)
+            if year >= 1000:
+                sec_int = int(second)
+                micro = int(round((second - sec_int) * 1_000_000))
+                time_first_obs = datetime(year, month, day, hour, minute, sec_int, micro)
+            else:
+                time_first_obs = _parse_time_fields(year, month, day, hour, minute, second)
         elif label == "TIME SYSTEM ID":
             time_system = line[0:3].strip()
         elif label == "LEAP SECONDS":
@@ -152,7 +173,7 @@ def parse_rinex_obs(path: str | Path) -> Tuple[ObsHeader, List[ObsEpoch]]:
                 if i >= len(lines):
                     break
                 sat_line = lines[i]
-                sat = sat_line[0:3].strip()
+                sat = _normalize_satellite_id(sat_line[0:3])
                 obs_types = obs_types_by_sys.get(sat[0], [])
                 obs_values, consumed = _parse_obs_values(lines, i, obs_types, offset=3)
                 sat_obs[sat] = obs_values
@@ -184,7 +205,7 @@ def parse_rinex_obs(path: str | Path) -> Tuple[ObsHeader, List[ObsEpoch]]:
         sats: List[str] = []
         sat_chunk = line[32:68]
         for pos in range(0, len(sat_chunk), 3):
-            sat = sat_chunk[pos : pos + 3].strip()
+            sat = _normalize_satellite_id(sat_chunk[pos : pos + 3])
             if sat:
                 sats.append(sat)
         i += 1
@@ -192,7 +213,7 @@ def parse_rinex_obs(path: str | Path) -> Tuple[ObsHeader, List[ObsEpoch]]:
             cont_line = lines[i]
             sat_chunk = cont_line[32:68]
             for pos in range(0, len(sat_chunk), 3):
-                sat = sat_chunk[pos : pos + 3].strip()
+                sat = _normalize_satellite_id(sat_chunk[pos : pos + 3])
                 if sat:
                     sats.append(sat)
             i += 1

@@ -1,0 +1,7 @@
+name,status,systems,solutions,processed_epochs,skipped_epochs,horiz_rms,3d_rms,message
+sample_rinex2_gps,ok,G,20,20,0,0.3857825958273623,3.150506244179486,ok
+downloaded_rinex2_gzip_gps,ok,G,20,20,0,2.252038473963067,13.5678020465115,ok
+downloaded_rinex3_gzip_gps_bds,ok,"G,C",20,20,0,0.3433188990297422,2.4752682797736534,ok
+urban_dynamic_gps_bds,ok,"G,C",20,20,0,304.7667841433468,307.0688141131617,ok
+no_selected_system_warning,warning,C,0,3,3,nan,nan,valid solutions below threshold
+hatanka_requires_conversion,expected_error,"G,C",0,0,0,,,Hatanaka-compressed observation file detected. Convert .crx/.d to RINEX .rnx/.obs/.o before processing.

@@ -15,7 +15,11 @@ def main() -> None:
     parser.add_argument("--nav", default="data/sample/brdc1170.26n", help="Path to RINEX nav file")
     args = parser.parse_args()
 
-    dataset = RinexDataModule().load(args.obs, args.nav)
+    try:
+        dataset = RinexDataModule().load(args.obs, args.nav)
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        raise SystemExit(1)
     header = dataset.obs_header
     epochs = dataset.epochs
     nav_header = dataset.nav_header

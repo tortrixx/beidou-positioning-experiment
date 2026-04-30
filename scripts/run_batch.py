@@ -16,6 +16,8 @@ DATASETS = [
     ("twtf_2026_117_gps_from_mixed", "G", "results/datasets/twtf_2026_117_gps_from_mixed/results.csv"),
     ("twtf_2026_117_bds", "C", "results/datasets/twtf_2026_117_bds/results.csv"),
     ("twtf_2026_117_gps_bds", "G,C", "results/datasets/twtf_2026_117_gps_bds/results.csv"),
+    ("urban_nav_hk_medium_urban_1_bds_200", "C", "results/datasets/urban_nav_hk_medium_urban_1_bds/results.csv"),
+    ("urban_nav_hk_medium_urban_1_gps_bds_200", "G,C", "results/datasets/urban_nav_hk_medium_urban_1_gps_bds/results.csv"),
 ]
 
 
