@@ -216,12 +216,13 @@ class ContinuousAnalysisModule:
         horiz = [err["horiz"] for err in errors]
         three_d = [err["three_d"] for err in errors]
         pdop = [sol.pdop or float("nan") for sol in solutions]
+        sat_counts = [len(sol.used_sats) for sol in solutions]
         lat = [sol.position_blh[0] for sol in solutions]
         lon = [sol.position_blh[1] for sol in solutions]
 
         error_path = out_dir / "error_dop.png"
         trajectory_path = out_dir / "trajectory.png"
-        if not plot_error_and_dop(times, horiz, three_d, pdop, str(error_path)):
+        if not plot_error_and_dop(times, horiz, three_d, pdop, str(error_path), sat_counts=sat_counts):
             raise RuntimeError("Failed to save error/DOP plot")
         if not plot_trajectory(lat, lon, str(trajectory_path)):
             raise RuntimeError("Failed to save trajectory plot")

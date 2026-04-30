@@ -60,20 +60,21 @@ def main() -> None:
         horiz = [err["horiz"] for err in errors]
         three_d = [err["three_d"] for err in errors]
         pdop = [sol.pdop for sol in solutions]
+        sat_counts = [len(sol.used_sats) for sol in solutions]
         lat = [sol.position_blh[0] for sol in solutions]
         lon = [sol.position_blh[1] for sol in solutions]
 
         if args.save_plots:
             err_path = f"{args.save_plots}/error_dop.png"
             traj_path = f"{args.save_plots}/trajectory.png"
-            saved_error = plot_error_and_dop(times, horiz, three_d, pdop, save_path=err_path)
+            saved_error = plot_error_and_dop(times, horiz, three_d, pdop, save_path=err_path, sat_counts=sat_counts)
             saved_traj = plot_trajectory(lat, lon, save_path=traj_path)
             if saved_error and saved_traj:
                 print(f"Plots saved: {err_path}, {traj_path}")
             else:
                 raise RuntimeError("Plot generation failed")
         else:
-            plot_error_and_dop(times, horiz, three_d, pdop)
+            plot_error_and_dop(times, horiz, three_d, pdop, sat_counts=sat_counts)
             plot_trajectory(lat, lon)
 
 

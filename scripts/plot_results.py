@@ -20,6 +20,7 @@ def main() -> None:
     horiz = []
     three_d = []
     pdop = []
+    sat_counts = []
     lat = []
     lon = []
 
@@ -30,20 +31,21 @@ def main() -> None:
             horiz.append(float(row["horiz"]))
             three_d.append(float(row["three_d"]))
             pdop.append(float(row["pdop"]))
+            sat_counts.append(int(float(row["used_sats"])))
             lat.append(float(row["lat"]))
             lon.append(float(row["lon"]))
 
     if args.save_dir:
         err_path = f"{args.save_dir}/error_dop.png"
         traj_path = f"{args.save_dir}/trajectory.png"
-        saved_error = plot_error_and_dop(times, horiz, three_d, pdop, save_path=err_path)
+        saved_error = plot_error_and_dop(times, horiz, three_d, pdop, save_path=err_path, sat_counts=sat_counts)
         saved_traj = plot_trajectory(lat, lon, save_path=traj_path)
         if saved_error and saved_traj:
             print(f"Plots saved: {err_path}, {traj_path}")
         else:
             raise RuntimeError("Plot generation failed")
     else:
-        plot_error_and_dop(times, horiz, three_d, pdop)
+        plot_error_and_dop(times, horiz, three_d, pdop, sat_counts=sat_counts)
         plot_trajectory(lat, lon)
 
 

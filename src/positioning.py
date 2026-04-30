@@ -65,6 +65,10 @@ def _validate_receiver_state(lat: float, lon: float, height_m: float) -> None:
         raise ValueError("Receiver height is outside the supported SPP range")
 
 
+def _elevation_weight(elev_rad: float) -> float:
+    return max(math.sin(elev_rad) ** 2, 0.05)
+
+
 def _solve_linear(a: List[List[float]], b: List[float]) -> List[float]:
     size = len(a)
     m = [row[:] + [b[idx]] for idx, row in enumerate(a)]
@@ -131,6 +135,7 @@ def single_point_position(
     elev_mask = math.radians(elev_mask_deg)
     residual_gate = _default_residual_gate_m(systems) if residual_gate_m is None else residual_gate_m
     normal: List[List[float]] = []
+    postfit_residuals: List[float] = []
 
     for iter_idx in range(max_iter):
         lat, lon, h = ecef_to_geodetic(x, y, z)
@@ -140,7 +145,7 @@ def single_point_position(
             gps_time = epoch.time + timedelta(seconds=BDT_GPS_OFFSET)
         _, sow = gps_week_seconds(gps_time)
 
-        geometry_rows: List[Tuple[str, List[float], float]] = []
+        geometry_rows: List[Tuple[str, List[float], float, float]] = []
         used_sats: List[str] = []
 
         for prn, obs in epoch.sat_obs.items():
@@ -182,11 +187,11 @@ def single_point_position(
             if iter_idx > 0 and abs(v) > residual_gate:
                 continue
 
-            geometry_rows.append((sat_system, [-dx / rho, -dy / rho, -dz / rho], v))
+            geometry_rows.append((sat_system, [-dx / rho, -dy / rho, -dz / rho], v, _elevation_weight(elev)))
             used_sats.append(prn)
 
         active_systems = []
-        for system, _, _ in geometry_rows:
+        for system, _, _, _ in geometry_rows:
             if system not in active_systems:
                 active_systems.append(system)
         active_systems.sort(key=lambda system: systems.index(system) if system in systems else len(systems))
@@ -199,12 +204,14 @@ def single_point_position(
 
         normal = [[0.0 for _ in range(unknown_count)] for _ in range(unknown_count)]
         rhs = [0.0 for _ in range(unknown_count)]
-        for system, geometry, v in geometry_rows:
+        design_rows: List[Tuple[List[float], float]] = []
+        for system, geometry, v, weight in geometry_rows:
             row = geometry + [1.0 if system == active_system else 0.0 for active_system in active_systems]
+            design_rows.append((row, v))
             for i in range(unknown_count):
-                rhs[i] += row[i] * v
+                rhs[i] += weight * row[i] * v
                 for j in range(unknown_count):
-                    normal[i][j] += row[i] * row[j]
+                    normal[i][j] += weight * row[i] * row[j]
 
         dxs = _solve_linear(normal, rhs)
         if not all(math.isfinite(delta) for delta in dxs):
@@ -214,6 +221,7 @@ def single_point_position(
         z += dxs[2]
         for idx, system in enumerate(active_systems):
             clock_bias_by_system[system] = clock_bias_by_system.get(system, 0.0) + dxs[3 + idx]
+        postfit_residuals = [v - sum(row[i] * dxs[i] for i in range(unknown_count)) for row, v in design_rows]
 
         if math.sqrt(dxs[0] ** 2 + dxs[1] ** 2 + dxs[2] ** 2) < error_thresh_m:
             break
@@ -224,6 +232,11 @@ def single_point_position(
 
     lat, lon, h = ecef_to_geodetic(x, y, z)
     ref_system = active_systems[0] if active_systems else (systems[0] if systems else "G")
+    residual_rms = None
+    residual_max = None
+    if postfit_residuals:
+        residual_rms = math.sqrt(sum(value * value for value in postfit_residuals) / len(postfit_residuals))
+        residual_max = max(abs(value) for value in postfit_residuals)
     return PositionSolution(
         time=epoch.time,
         position_ecef=(x, y, z),
@@ -232,4 +245,6 @@ def single_point_position(
         used_sats=used_sats,
         pdop=pdop,
         gdop=gdop,
+        residual_rms_m=residual_rms,
+        residual_max_m=residual_max,
     )

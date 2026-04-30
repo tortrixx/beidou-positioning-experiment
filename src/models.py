@@ -76,3 +76,5 @@ class PositionSolution:
     used_sats: List[str]
     pdop: Optional[float]
     gdop: Optional[float]
+    residual_rms_m: Optional[float] = None
+    residual_max_m: Optional[float] = None

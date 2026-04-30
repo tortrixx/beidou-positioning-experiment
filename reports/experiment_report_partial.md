@@ -30,9 +30,11 @@ Input RINEX -> preprocess -> satellite/clock -> least squares -> analysis -> CSV
 - RINEX 3 BDS `IONOSPHERIC CORR` coefficients are parsed and selected for BDS Klobuchar correction.
 - Satellite orbit computed in ECEF with Earth rotation correction.
 - Clock correction includes broadcast polynomial and relativistic term.
+- BDT/GPST conversion is handled explicitly for BDS ephemeris selection and satellite propagation.
 - BDS GEO satellites C01-C05 use a dedicated GEO rotation branch.
 - Troposphere and ionosphere corrections applied per satellite.
-- Iterative least squares with convergence threshold, configurable residual gate, receiver-state sanity checks, and PDOP/GDOP metrics.
+- Iterative least squares supports one receiver clock parameter per GNSS system, so GPS+BDS joint positioning can estimate inter-system clock bias instead of forcing all systems into one clock term.
+- Solver controls include convergence threshold, configurable residual gate, elevation weighted least squares, receiver-state sanity checks, residual diagnostics, and PDOP/GDOP metrics.
 
 ## 5. Test Results (Current Dataset)
 Dataset:
@@ -41,8 +43,8 @@ Dataset:
 
 Continuous positioning (full dataset):
 - Solutions: 2880 epochs
-- Horizontal RMS/Mean/Max (m): 1.964 / 1.594 / 5.892
-- 3D RMS/Mean/Max (m): 4.314 / 3.585 / 10.009
+- Horizontal RMS/Mean/Max (m): 1.658 / 1.378 / 4.758
+- 3D RMS/Mean/Max (m): 4.253 / 3.517 / 10.121
 
 Plots:
 - Error/DOP curve and trajectory can be generated from `results.csv`.
@@ -51,17 +53,18 @@ Additional validation datasets:
 
 | Dataset | System | Solutions | Horizontal RMS/Mean/Max (m) | 3D RMS/Mean/Max (m) | Notes |
 | --- | --- | ---: | --- | --- | --- |
-| `data/datasets/bjfs_2026_117_gps` | GPS | 2880 | 1.964 / 1.594 / 5.892 | 4.314 / 3.585 / 10.009 | Baseline sample and daily GPS validation |
-| `data/datasets/daej_2026_117_gps` | GPS | 2880 | 2.586 / 1.853 / 12.215 | 4.220 / 3.488 / 14.292 | Independent station validation |
-| `data/datasets/hksl_2026_117_gps` | GPS | 2880 | 4.005 / 3.448 / 9.780 | 6.048 / 5.276 / 15.305 | Independent station validation |
-| `data/datasets/twtf_2026_117_mixed` | GPS from mixed RINEX | 2880 | 6.254 / 4.920 / 14.966 | 7.722 / 6.468 / 20.000 | RINEX 3 mixed data parser validation |
-| `data/datasets/twtf_2026_117_mixed` | BDS only | 3 | 2809.343 / 2808.914 / 2868.813 | 3554.110 / 3553.547 / 3631.011 | Stability regression test; current BDS-only precision remains limited |
+| `data/datasets/bjfs_2026_117_gps` | GPS | 2880 | 1.658 / 1.378 / 4.758 | 4.253 / 3.517 / 10.121 | Baseline sample and daily GPS validation |
+| `data/datasets/daej_2026_117_gps` | GPS | 2880 | 1.948 / 1.491 / 7.122 | 3.904 / 3.280 / 9.308 | Independent station validation |
+| `data/datasets/hksl_2026_117_gps` | GPS | 2880 | 3.895 / 3.362 / 7.864 | 5.265 / 4.685 / 13.005 | Independent station validation |
+| `data/datasets/twtf_2026_117_mixed` | GPS from mixed RINEX | 2880 | 5.779 / 4.434 / 12.705 | 6.598 / 5.531 / 14.513 | RINEX 3 mixed data parser validation |
+| `data/datasets/twtf_2026_117_mixed` | BDS only | 2880 | 6.015 / 4.072 / 53.206 | 7.488 / 6.055 / 59.987 | Full-day BDS verification |
+| `data/datasets/twtf_2026_117_mixed` | GPS+BDS | 2880 | 5.347 / 3.979 / 11.681 | 6.029 / 5.175 / 12.411 | Joint solution with per-system clock parameters |
 
 ## 6. Error Analysis (Brief)
 - Errors correlate with satellite geometry (DOP) and measurement noise.
 - Low elevation satellites increase multipath and residuals; elevation mask mitigates this.
 
 ## 7. Limitations and Future Work
-- BDS-only positioning is now stable on the TWTF RINEX 3 mixed dataset, but the current error is still at kilometer level. It should be treated as a parser/model integration milestone, not as final high-precision BDS performance.
-- Multi-GNSS joint positioning still needs inter-system bias modeling before GPS+BDS fusion can be considered complete.
-- Add richer outlier detection and robustness, such as elevation/CN0 weighting, robust least squares, and satellite-specific residual diagnostics.
+- BDS-only and GPS+BDS full-day runs are now meter-level on the TWTF mixed dataset, but more stations/days are still needed before claiming broad generality.
+- Multi-GNSS joint positioning currently estimates per-system receiver clock terms; later work can add explicit inter-frequency and receiver hardware bias diagnostics.
+- Add richer outlier detection and robustness, such as CN0 weighting and satellite-specific long-term residual diagnostics.

@@ -1,12 +1,13 @@
 # 北斗定位解算实验
 
-本项目基于 RINEX 观测与导航数据实现 GNSS 单点定位（SPP）全流程软件。当前验证数据为 GPS RINEX 2.11。代码采用模块化设计，包含解析、卫星位置/钟差、SPP 解算、连续定位、误差分析、可视化以及 PyQt GUI。
+本项目基于 RINEX 观测与导航数据实现 GNSS 单点定位（SPP）全流程软件。当前已验证 GPS RINEX 2.11、RINEX 3 混合数据、BDS 单系统与 GPS+BDS 联合解算。代码采用模块化设计，包含解析、卫星位置/钟差、SPP 解算、连续定位、误差分析、可视化以及 PyQt GUI。
 
 ## 功能特性
-- RINEX 2.11 观测与导航解析
+- RINEX 2.11 与 RINEX 3 混合观测/导航解析
 - 卫星位置与钟差修正
-- 对流层（Saastamoinen）与电离层（Klobuchar）改正
-- 迭代最小二乘 SPP
+- 对流层（Saastamoinen）与 GPS/BDS Klobuchar 电离层改正
+- GPS、BDS 与 GPS+BDS 联合迭代最小二乘 SPP
+- 高度角加权最小二乘、残差门限剔除与残差诊断
 - 连续定位与 RMS/均值/最大误差统计
 - CSV 导出与绘图（误差/DOP、轨迹）
 - PyQt GUI 实时显示与轨迹回放
@@ -30,6 +31,12 @@ python3 -m pip install -r requirements.txt
 - `data/sample/bjfs1170.26o`
 - `data/sample/brdc1170.26n`
 
+批量测试数据按站点/日期整理在：
+- `data/datasets/bjfs_2026_117_gps`
+- `data/datasets/daej_2026_117_gps`
+- `data/datasets/hksl_2026_117_gps`
+- `data/datasets/twtf_2026_117_mixed`
+
 ## 快速开始（命令行）
 ```bash
 # 激活环境（mac）
@@ -47,6 +54,36 @@ python3 scripts/run_spp.py --obs data/sample/bjfs1170.26o --nav data/sample/brdc
 连续解算并导出 CSV：
 ```bash
 python3 scripts/run_continuous.py --obs data/sample/bjfs1170.26o --nav data/sample/brdc1170.26n
+```
+
+BDS 单系统全日解算：
+```bash
+python3 scripts/run_continuous.py \
+  --obs data/datasets/twtf_2026_117_mixed/rinex/TWTF00TWN_R_20261170000_01D_30S_MO.rnx \
+  --nav data/datasets/twtf_2026_117_mixed/rinex/BRDM00DLR_S_20261170000_01D_MN.rnx \
+  --systems C \
+  --csv results/datasets/twtf_2026_117_bds/results.csv \
+  --plot --save-plots results/datasets/twtf_2026_117_bds
+```
+
+GPS+BDS 联合解算：
+```bash
+python3 scripts/run_continuous.py \
+  --obs data/datasets/twtf_2026_117_mixed/rinex/TWTF00TWN_R_20261170000_01D_30S_MO.rnx \
+  --nav data/datasets/twtf_2026_117_mixed/rinex/BRDM00DLR_S_20261170000_01D_MN.rnx \
+  --systems G,C \
+  --csv results/datasets/twtf_2026_117_gps_bds/results.csv \
+  --plot --save-plots results/datasets/twtf_2026_117_gps_bds
+```
+
+汇总所有已生成结果：
+```bash
+python3 scripts/run_batch.py --output results/summary.csv
+```
+
+附加题：训练线性回归误差补偿模型：
+```bash
+python3 scripts/train_error_model.py --output-dir results/ml_compensation
 ```
 
 从 CSV 生成图表：
@@ -71,7 +108,7 @@ GUI 参数说明：
 - Step / Max epochs：抽样步长与最大历元数
 - Max iterations / Error threshold：迭代上限与收敛阈值
 - Elevation mask：高度角掩码
-- GNSS systems：默认 `G`（GPS）
+- GNSS systems：默认 `G`（GPS），可填 `C`（BDS）或 `G,C`（GPS+BDS）
 
 按钮：
 - Run：开始连续定位
@@ -119,5 +156,6 @@ reports/
 - 模块5 `SoftwareSystemModule`：整合“数据输入 -> 预处理 -> 解算 -> 分析 -> 输出”的完整自动化流程。
 
 ## 说明与限制
-- 当前验证数据为 GPS RINEX 2.11；代码已支持 RINEX 3 BDS 导航记录、BDSA/BDSB 电离层参数和 C01-C05 GEO 分支，但仍需补充真实 BDS 数据集完成验收验证。
-- 完整实验需使用多组数据并记录测试结果。
+- 当前已完成 GPS、BDS 与 GPS+BDS 联合解算验证。TWTF 混合数据全日 BDS-only 3D RMS 为 7.488 m，GPS+BDS 3D RMS 为 6.029 m。
+- 附加题已实现线性回归误差补偿。当前测试集 3D RMS 从 5.716 m 降至 3.373 m。
+- 后续可继续加入 CN0/SNR 权重、更多站点/多日数据和随机森林等非线性模型。

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 from analysis import compute_errors, summarize_errors
@@ -73,17 +74,22 @@ def run_continuous_pipeline(
 
 
 def write_csv(path: str, solutions: List[PositionSolution], errors: List[Dict[str, float]]) -> None:
-    with open(path, "w", encoding="utf-8") as f:
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8") as f:
         f.write(
-            "time,x,y,z,lat,lon,h,clock_bias_m,used_sats,pdop,gdop,east,north,up,horiz,three_d\n"
+            "time,x,y,z,lat,lon,h,clock_bias_m,used_sats,pdop,gdop,"
+            "residual_rms_m,residual_max_m,east,north,up,horiz,three_d\n"
         )
         for sol, err in zip(solutions, errors):
+            residual_rms = "" if sol.residual_rms_m is None else f"{sol.residual_rms_m:.4f}"
+            residual_max = "" if sol.residual_max_m is None else f"{sol.residual_max_m:.4f}"
             f.write(
                 f"{sol.time.isoformat()},"
                 f"{sol.position_ecef[0]:.4f},{sol.position_ecef[1]:.4f},{sol.position_ecef[2]:.4f},"
                 f"{sol.position_blh[0]:.8f},{sol.position_blh[1]:.8f},{sol.position_blh[2]:.4f},"
                 f"{sol.clock_bias_m:.4f},{len(sol.used_sats)},"
-                f"{sol.pdop:.3f},{sol.gdop:.3f},"
+                f"{sol.pdop:.3f},{sol.gdop:.3f},{residual_rms},{residual_max},"
                 f"{err['east']:.4f},{err['north']:.4f},{err['up']:.4f},"
                 f"{err['horiz']:.4f},{err['three_d']:.4f}\n"
             )

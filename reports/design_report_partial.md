@@ -31,9 +31,13 @@ flowchart LR
 - RINEX 3 mixed navigation records parse GPS and BDS records, while short SBAS/unsupported records are skipped safely.
 - BDS `BDSA/BDSB` ionospheric coefficients are parsed and selected for BDS Klobuchar correction.
 - BDS GEO satellites C01-C05 use a dedicated GEO orbit transformation branch.
+- BDS satellite propagation converts mixed-file GPST epochs to BDT with the correct sign before ephemeris selection and orbit calculation.
 - BDS-only SPP uses a wider default post-fit residual gate and receiver-state sanity checks to prevent divergent iterations from entering the atmospheric model.
+- GPS+BDS joint SPP expands the least-squares state from `[x, y, z, receiver_clock]` to `[x, y, z, clock_G, clock_C, ...]`, allowing inter-system clock bias to be estimated naturally.
+- The least-squares normal equations use elevation-angle weights, and each solution records post-fit residual RMS/max values for diagnostics.
 
 ## 5. Current Design Limits
 - GPS-only SPP is the validated precision baseline.
-- BDS-only processing is stable but not yet high precision on the TWTF dataset.
-- GPS+BDS fusion still requires inter-system bias modeling and weighted/robust least squares.
+- BDS-only and GPS+BDS full-day processing are validated on the TWTF mixed dataset.
+- More BDS stations/days are needed to verify generality.
+- CN0/SNR-based weighting and long-term satellite residual statistics remain planned improvements.

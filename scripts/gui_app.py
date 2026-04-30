@@ -256,9 +256,10 @@ class MainWindow(QWidget):
         horiz = [err["horiz"] for err in self._errors]
         three_d = [err["three_d"] for err in self._errors]
         pdop = [sol.pdop for sol in self._solutions]
+        sat_counts = [len(sol.used_sats) for sol in self._solutions]
         lat = [sol.position_blh[0] for sol in self._solutions]
         lon = [sol.position_blh[1] for sol in self._solutions]
-        plot_error_and_dop(times, horiz, three_d, pdop)
+        plot_error_and_dop(times, horiz, three_d, pdop, sat_counts=sat_counts)
         plot_trajectory(lat, lon)
 
     def _replay(self) -> None:

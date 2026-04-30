@@ -10,6 +10,7 @@ def plot_error_and_dop(
     three_d: Iterable[float],
     pdop: Iterable[float],
     save_path: Optional[str] = None,
+    sat_counts: Optional[Iterable[int]] = None,
 ) -> bool:
     try:
         if save_path:
@@ -25,8 +26,10 @@ def plot_error_and_dop(
     horiz_list = list(horiz)
     three_d_list = list(three_d)
     pdop_list = list(pdop)
+    sat_count_list = list(sat_counts) if sat_counts is not None else None
 
-    fig, axes = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+    row_count = 3 if sat_count_list is not None else 2
+    fig, axes = plt.subplots(row_count, 1, figsize=(10, 3 * row_count), sharex=True)
     axes[0].plot(time_list, horiz_list, label="Horizontal error (m)")
     axes[0].plot(time_list, three_d_list, label="3D error (m)")
     axes[0].set_ylabel("Error (m)")
@@ -38,6 +41,13 @@ def plot_error_and_dop(
     axes[1].set_ylabel("DOP")
     axes[1].grid(True, linestyle="--", alpha=0.5)
     axes[1].legend()
+
+    if sat_count_list is not None:
+        axes[2].plot(time_list, sat_count_list, label="Visible/used satellites")
+        axes[2].set_xlabel("Epoch index")
+        axes[2].set_ylabel("Sat count")
+        axes[2].grid(True, linestyle="--", alpha=0.5)
+        axes[2].legend()
 
     fig.tight_layout()
     if save_path:

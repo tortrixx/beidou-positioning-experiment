@@ -45,13 +45,39 @@ class ExperimentModuleTests(unittest.TestCase):
             error_path = tmp_path / "error_dop.png"
             traj_path = tmp_path / "trajectory.png"
 
-            error_saved = plot_error_and_dop([0, 1], [1.0, 2.0], [2.0, 3.0], [1.5, 1.6], str(error_path))
+            error_saved = plot_error_and_dop(
+                [0, 1],
+                [1.0, 2.0],
+                [2.0, 3.0],
+                [1.5, 1.6],
+                str(error_path),
+                sat_counts=[8, 9],
+            )
             traj_saved = plot_trajectory([39.0, 39.1], [116.0, 116.1], str(traj_path))
 
             self.assertTrue(error_saved)
             self.assertTrue(error_path.exists())
             self.assertTrue(traj_saved)
             self.assertTrue(traj_path.exists())
+
+    def test_solution_csv_includes_residual_diagnostics(self) -> None:
+        from experiment_modules import SoftwareSystemModule
+
+        with tempfile.TemporaryDirectory() as tmp:
+            csv_path = Path(tmp) / "diagnostics" / "results.csv"
+            result = SoftwareSystemModule().run(
+                ROOT / "data" / "sample" / "bjfs1170.26o",
+                ROOT / "data" / "sample" / "brdc1170.26n",
+                max_epochs=2,
+                output_csv=csv_path,
+            )
+
+            self.assertEqual(len(result.solutions), 2)
+            self.assertIsNotNone(result.solutions[0].residual_rms_m)
+            self.assertIsNotNone(result.solutions[0].residual_max_m)
+            header = csv_path.read_text(encoding="utf-8").splitlines()[0]
+            self.assertIn("residual_rms_m", header)
+            self.assertIn("residual_max_m", header)
 
     def test_five_experiment_modules_run_single_epoch(self) -> None:
         from experiment_modules import (
@@ -83,6 +109,16 @@ class ExperimentModuleTests(unittest.TestCase):
         run = system.run(ROOT / "data" / "sample" / "bjfs1170.26o", ROOT / "data" / "sample" / "brdc1170.26n", max_epochs=2)
         self.assertEqual(len(run.solutions), 2)
         self.assertIn("3d_rms", run.stats)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            csv_path = Path(tmp) / "nested" / "results.csv"
+            system.run(
+                ROOT / "data" / "sample" / "bjfs1170.26o",
+                ROOT / "data" / "sample" / "brdc1170.26n",
+                max_epochs=1,
+                output_csv=csv_path,
+            )
+            self.assertTrue(csv_path.exists())
 
     def test_rinex3_bds_navigation_header_and_record_parse(self) -> None:
         from rinex_nav import parse_rinex_nav
@@ -200,6 +236,75 @@ class ExperimentModuleTests(unittest.TestCase):
 
         self.assertEqual(len(result.solutions), 120)
         self.assertLess(result.stats["3d_rms"], 100.0)
+
+    def test_batch_summary_reads_result_csv(self) -> None:
+        from batch import summarize_result_csv
+
+        with tempfile.TemporaryDirectory() as tmp:
+            csv_path = Path(tmp) / "results.csv"
+            csv_path.write_text(
+                "\n".join(
+                    [
+                        "time,used_sats,pdop,gdop,residual_rms_m,residual_max_m,horiz,three_d",
+                        "2026-01-01T00:00:00,8,2.0,3.0,0.5,1.0,3.0,4.0",
+                        "2026-01-01T00:00:30,10,4.0,5.0,0.7,1.5,5.0,6.0",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            summary = summarize_result_csv("toy", "G", csv_path)
+
+        self.assertEqual(summary["dataset"], "toy")
+        self.assertEqual(summary["system"], "G")
+        self.assertEqual(summary["epochs"], 2)
+        self.assertAlmostEqual(summary["horiz_rms"], (17.0) ** 0.5)
+        self.assertAlmostEqual(summary["3d_mean"], 5.0)
+        self.assertAlmostEqual(summary["used_sats_mean"], 9.0)
+
+    def test_linear_error_compensation_improves_synthetic_holdout(self) -> None:
+        from ml_compensation import evaluate_compensation, split_train_test, train_linear_model
+
+        rows = []
+        for idx in range(40):
+            pdop = 1.0 + idx * 0.1
+            rows.append(
+                {
+                    "dataset": "synthetic",
+                    "used_sats": "8",
+                    "pdop": str(pdop),
+                    "gdop": str(pdop + 0.5),
+                    "residual_rms_m": "0.2",
+                    "residual_max_m": "0.4",
+                    "clock_bias_m": "0.0",
+                    "h": "100.0",
+                    "east": str(2.0 * pdop + 1.0),
+                    "north": str(-pdop),
+                    "up": str(0.5 * pdop),
+                }
+            )
+
+        train_rows, test_rows = split_train_test(rows, train_ratio=0.7)
+        model = train_linear_model(train_rows)
+        metrics = evaluate_compensation(model, test_rows)
+
+        self.assertLess(metrics["compensated_3d_rms"], metrics["original_3d_rms"])
+        self.assertLess(metrics["compensated_horiz_rms"], metrics["original_horiz_rms"])
+
+    def test_submission_file_list_excludes_runtime_and_raw_archives(self) -> None:
+        from submission import build_submission_file_list
+
+        files = build_submission_file_list(ROOT)
+        path_text = "\n".join(str(path) for path in files)
+
+        self.assertIn(Path("reports/final_experiment_report.md"), files)
+        self.assertIn(Path("src/positioning.py"), files)
+        self.assertIn(Path("results/summary.csv"), files)
+        self.assertNotIn(".venv", path_text)
+        self.assertNotIn(".git", path_text)
+        self.assertNotIn("__pycache__", path_text)
+        self.assertNotIn("/raw/", path_text)
+        self.assertFalse(any(path.suffix == ".gz" for path in files))
 
 
 if __name__ == "__main__":

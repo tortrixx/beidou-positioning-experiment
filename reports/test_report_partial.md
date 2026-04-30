@@ -24,14 +24,16 @@
 | RINEX 3 BDS navigation parsing | synthetic BDS nav unit test | Passed; `BDSA/BDSB` ionospheric coefficients parsed |
 | RINEX 3 mixed observation parsing | TWTF mixed dataset | Passed; BDS and Galileo observations detected |
 | Mixed navigation parsing | TWTF BRDM navigation | Passed; GPS and BDS records detected while short SBAS records are skipped |
-| BDS-only stability | TWTF mixed dataset, `systems=("C",)`, first 3 valid epochs | Passed; no overflow and finite receiver states |
+| Weighted LS + residual diagnostics | sample GPS dataset | Passed; CSV includes `residual_rms_m` and `residual_max_m` |
+| BDS-only stability and accuracy | TWTF mixed dataset, `systems=("C",)` | Passed; full-day run remains finite with 3D RMS 7.488 m |
+| GPS+BDS joint positioning | TWTF mixed dataset, `systems=("G", "C")` | Passed; per-system clock model gives full-day 3D RMS 6.029 m |
 
 ## 4. Verification Commands
 ```bash
 MPLCONFIGDIR=/private/tmp/mplconfig XDG_CACHE_HOME=/private/tmp/xdgcache \
   .venv/bin/python -m unittest tests.test_experiment_modules -v
 ```
-Result: 10 tests passed.
+Result: 12 tests passed.
 
 ```bash
 PYTHONPYCACHEPREFIX=/private/tmp/beidou_pycache \
@@ -43,18 +45,33 @@ Result: all modules compiled successfully.
 .venv/bin/python scripts/run_continuous.py \
   --obs data/datasets/twtf_2026_117_mixed/rinex/TWTF00TWN_R_20261170000_01D_30S_MO.rnx \
   --nav data/datasets/twtf_2026_117_mixed/rinex/BRDM00DLR_S_20261170000_01D_MN.rnx \
-  --systems C --max-epochs 3 --csv /private/tmp/twtf_bds_check.csv
+  --systems C --csv results/datasets/twtf_2026_117_bds/results.csv \
+  --plot --save-plots results/datasets/twtf_2026_117_bds
 ```
-Result: 3 BDS-only solutions; horizontal RMS 2809.343 m, 3D RMS 3554.110 m.
+Result: 2880 BDS-only solutions; horizontal RMS 6.015 m, 3D RMS 7.488 m.
+
+```bash
+.venv/bin/python scripts/run_continuous.py \
+  --obs data/datasets/twtf_2026_117_mixed/rinex/TWTF00TWN_R_20261170000_01D_30S_MO.rnx \
+  --nav data/datasets/twtf_2026_117_mixed/rinex/BRDM00DLR_S_20261170000_01D_MN.rnx \
+  --systems G,C --csv results/datasets/twtf_2026_117_gps_bds/results.csv \
+  --plot --save-plots results/datasets/twtf_2026_117_gps_bds
+```
+Result: 2880 GPS+BDS solutions; horizontal RMS 5.347 m, 3D RMS 6.029 m.
 
 ## 5. Issues Fixed
 - Default sample paths now point to managed sample data under `data/sample/`.
 - Continuous pipeline validates `step`, `max_epochs`, and `max_iter`.
 - Plotting functions report save failures instead of printing false success.
 - RINEX 3 mixed observation and navigation parsing covers BDS records needed by the lab.
-- BDS-only continuous runs now use a BDS-appropriate residual gate and receiver-state sanity checks to prevent divergent heights from overflowing the atmospheric model.
+- BDS time conversion now uses the correct GPST to BDT direction for BDS satellite propagation.
+- BDS-only continuous runs use a BDS-appropriate residual gate and receiver-state sanity checks to prevent divergent heights from overflowing the atmospheric model.
+- GPS+BDS joint runs estimate one clock term per GNSS system, preventing BDS observations from being forced into the GPS receiver clock parameter.
+- CSV export now creates missing parent directories, so batch result folders can be generated directly.
+- Positioning uses elevation-weighted normal equations and exports post-fit residual RMS/max diagnostics for debugging and later model training.
+- Error/DOP plots now include visible/used satellite count curves.
 
 ## 6. Remaining Risks
-- BDS-only precision is not yet acceptable for the final experiment target; the current result mainly proves parser/model integration and runtime stability.
-- GPS+BDS joint positioning still needs inter-system clock/bias modeling.
-- The solver is unweighted; low-elevation and noisy satellites can still dominate residuals.
+- Current validation covers one mixed BDS station/day; more BDS datasets should be added for robustness.
+- The solver is weighted by elevation but does not yet use CN0/SNR-based weights.
+- Future tests should include GUI screenshots and longer multi-day batch runs.
