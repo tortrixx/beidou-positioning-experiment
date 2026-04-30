@@ -3,30 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable, Optional
 
-
-def _configure_chinese_font(plt) -> None:
-    try:
-        import matplotlib.font_manager as fm
-    except ImportError:
-        return
-
-    candidates = [
-        "Arial Unicode MS",
-        "PingFang SC",
-        "Heiti SC",
-        "Heiti TC",
-        "Songti SC",
-        "Noto Sans CJK SC",
-        "Microsoft YaHei",
-        "SimHei",
-        "WenQuanYi Zen Hei",
-    ]
-    installed = {font.name for font in fm.fontManager.ttflist}
-    for name in candidates:
-        if name in installed:
-            plt.rcParams["font.sans-serif"] = [name, "DejaVu Sans"]
-            plt.rcParams["axes.unicode_minus"] = False
-            return
+from plot_style import configure_chinese_font
 
 
 def plot_error_and_dop(
@@ -46,7 +23,7 @@ def plot_error_and_dop(
     except ImportError:
         print("未安装 matplotlib，已跳过绘图")
         return False
-    _configure_chinese_font(plt)
+    configure_chinese_font(plt)
 
     time_list = list(times)
     horiz_list = list(horiz)
@@ -103,7 +80,7 @@ def plot_trajectory(
     except ImportError:
         print("未安装 matplotlib，已跳过绘图")
         return False
-    _configure_chinese_font(plt)
+    configure_chinese_font(plt)
 
     lat_list = list(lat)
     lon_list = list(lon)
@@ -140,7 +117,7 @@ def playback_trajectory(
     except ImportError:
         print("未安装 matplotlib，已跳过轨迹回放")
         return None
-    _configure_chinese_font(plt)
+    configure_chinese_font(plt)
 
     lat_list = list(lat)
     lon_list = list(lon)

@@ -24,33 +24,17 @@ from PyQt5.QtWidgets import (
 sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 
 from experiment_modules import SoftwareSystemModule
+from gnss_systems import parse_systems
+from plot_style import configure_chinese_font
 from plotting import plot_error_and_dop, plot_trajectory
 
 
-def _configure_chinese_font() -> None:
+def _configure_replay_font() -> None:
     try:
         import matplotlib
-        import matplotlib.font_manager as fm
     except ImportError:
         return
-
-    candidates = [
-        "Arial Unicode MS",
-        "PingFang SC",
-        "Heiti SC",
-        "Heiti TC",
-        "Songti SC",
-        "Noto Sans CJK SC",
-        "Microsoft YaHei",
-        "SimHei",
-        "WenQuanYi Zen Hei",
-    ]
-    installed = {font.name for font in fm.fontManager.ttflist}
-    for name in candidates:
-        if name in installed:
-            matplotlib.rcParams["font.sans-serif"] = [name, "DejaVu Sans"]
-            matplotlib.rcParams["axes.unicode_minus"] = False
-            return
+    configure_chinese_font(matplotlib)
 
 
 class Worker(QObject):
@@ -222,7 +206,12 @@ class MainWindow(QWidget):
         self._last_log_count = 0
         self._append_log("正在解算...")
 
-        systems = [s.strip() for s in self.systems_edit.text().split(",") if s.strip()]
+        try:
+            systems = parse_systems(self.systems_edit.text())
+        except ValueError as exc:
+            self._append_log(f"错误：{exc}")
+            self.run_btn.setEnabled(True)
+            return
 
         self.worker = Worker(
             self.obs_edit.text(),
@@ -315,7 +304,7 @@ class MainWindow(QWidget):
         except ImportError:
             self._append_log("未安装 matplotlib，无法进行轨迹回放")
             return
-        _configure_chinese_font()
+        _configure_replay_font()
 
         lat = [sol.position_blh[0] for sol in self._solutions]
         lon = [sol.position_blh[1] for sol in self._solutions]

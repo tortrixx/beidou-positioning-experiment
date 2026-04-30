@@ -7,6 +7,7 @@ import sys
 sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 
 from experiment_modules import SoftwareSystemModule
+from gnss_systems import parse_systems
 from plotting import plot_error_and_dop, plot_trajectory
 
 
@@ -22,11 +23,11 @@ def main() -> None:
     parser.add_argument("--err-thresh", type=float, default=0.01, help="收敛阈值，单位 m")
     parser.add_argument("--elev-mask", type=float, default=10.0, help="高度角截止角，单位 deg")
     parser.add_argument("--residual-gate", type=float, default=None, help="验后残差剔除阈值，单位 m")
-    parser.add_argument("--systems", default="G", help="GNSS 系统，例如 G 或 G,C,R")
+    parser.add_argument("--systems", default="G", help="GNSS 系统：G、C 或 G,C")
     parser.add_argument("--save-plots", default="", help="将图像保存到指定目录，不弹窗显示")
     args = parser.parse_args()
 
-    systems = tuple([s.strip() for s in args.systems.split(",") if s.strip()])
+    systems = parse_systems(args.systems)
     result = SoftwareSystemModule().run(
         args.obs,
         args.nav,

@@ -309,6 +309,28 @@ class ExperimentModuleTests(unittest.TestCase):
         self.assertIn("错误：", result.stderr)
         self.assertNotIn("Traceback", result.stderr)
 
+    def test_spp_cli_rejects_negative_epoch_without_traceback(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "scripts/run_spp.py",
+                "--obs",
+                "data/sample/bjfs1170.26o",
+                "--nav",
+                "data/sample/brdc1170.26n",
+                "--epoch",
+                "-1",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("历元索引必须 >= 0", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
     def test_continuous_cli_reports_invalid_input_without_traceback(self) -> None:
         result = subprocess.run(
             [
@@ -327,6 +349,30 @@ class ExperimentModuleTests(unittest.TestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("错误：", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_continuous_cli_rejects_unsupported_system_without_traceback(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "scripts/run_continuous.py",
+                "--obs",
+                "data/sample/bjfs1170.26o",
+                "--nav",
+                "data/sample/brdc1170.26n",
+                "--systems",
+                "R",
+                "--max-epochs",
+                "1",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("当前仅支持 GPS(G) 和 BDS(C)", result.stderr)
         self.assertNotIn("Traceback", result.stderr)
 
     def test_urban_nav_inventory_detects_bds_observation_files(self) -> None:

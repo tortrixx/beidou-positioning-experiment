@@ -1,7 +1,7 @@
 name,status,systems,solutions,processed_epochs,skipped_epochs,horiz_rms,3d_rms,message
-sample_rinex2_gps,ok,G,20,20,0,0.3857825958273623,3.150506244179486,ok
-downloaded_rinex2_gzip_gps,ok,G,20,20,0,2.252038473963067,13.5678020465115,ok
-downloaded_rinex3_gzip_gps_bds,ok,"G,C",20,20,0,0.3433188990297422,2.4752682797736534,ok
-urban_dynamic_gps_bds,ok,"G,C",20,20,0,304.7667841433468,307.0688141131617,ok
-no_selected_system_warning,warning,C,0,3,3,nan,nan,valid solutions below threshold
-hatanka_requires_conversion,expected_error,"G,C",0,0,0,,,Hatanaka-compressed observation file detected. Convert .crx/.d to RINEX .rnx/.obs/.o before processing.
+sample_rinex2_gps,ok,G,20,20,0,0.3857825958273623,3.150506244179486,正常
+downloaded_rinex2_gzip_gps,ok,G,20,20,0,2.252038473963067,13.5678020465115,正常
+downloaded_rinex3_gzip_gps_bds,ok,"G,C",20,20,0,0.3433188990297422,2.4752682797736534,正常
+urban_dynamic_gps_bds,ok,"G,C",20,20,0,304.7667841433468,307.0688141131617,正常
+no_selected_system_warning,warning,C,0,3,3,nan,nan,有效解数量低于阈值
+hatanka_requires_conversion,expected_error,"G,C",0,0,0,,,检测到 Hatanaka 压缩观测文件。请先将 .crx/.d 转换为普通 RINEX .rnx/.obs/.o 后再处理。

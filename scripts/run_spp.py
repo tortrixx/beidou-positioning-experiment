@@ -7,6 +7,7 @@ import sys
 sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 
 from experiment_modules import RinexDataModule, SinglePointPositioningModule
+from gnss_systems import parse_systems
 
 
 def main() -> None:
@@ -18,17 +19,19 @@ def main() -> None:
     parser.add_argument("--err-thresh", type=float, default=0.01, help="收敛阈值，单位 m")
     parser.add_argument("--elev-mask", type=float, default=10.0, help="高度角截止角，单位 deg")
     parser.add_argument("--residual-gate", type=float, default=None, help="验后残差剔除阈值，单位 m")
-    parser.add_argument("--systems", default="G", help="GNSS 系统，例如 G 或 G,C,R")
+    parser.add_argument("--systems", default="G", help="GNSS 系统：G、C 或 G,C")
     args = parser.parse_args()
 
     dataset = RinexDataModule().load(args.obs, args.nav)
     obs_header = dataset.obs_header
     epochs = dataset.epochs
 
+    if args.epoch < 0:
+        raise ValueError("历元索引必须 >= 0")
     if args.epoch >= len(epochs):
         raise ValueError("历元索引超出范围")
 
-    systems = tuple([s.strip() for s in args.systems.split(",") if s.strip()])
+    systems = parse_systems(args.systems)
     solver = SinglePointPositioningModule(dataset.nav_header, dataset.nav_records)
     solution = solver.solve_epoch(
         epochs[args.epoch],

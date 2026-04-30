@@ -15,31 +15,7 @@ from ml_compensation import (
     train_linear_model,
     write_predictions,
 )
-
-
-def _configure_chinese_font(plt) -> None:
-    try:
-        import matplotlib.font_manager as fm
-    except ImportError:
-        return
-
-    candidates = [
-        "Arial Unicode MS",
-        "PingFang SC",
-        "Heiti SC",
-        "Heiti TC",
-        "Songti SC",
-        "Noto Sans CJK SC",
-        "Microsoft YaHei",
-        "SimHei",
-        "WenQuanYi Zen Hei",
-    ]
-    installed = {font.name for font in fm.fontManager.ttflist}
-    for name in candidates:
-        if name in installed:
-            plt.rcParams["font.sans-serif"] = [name, "DejaVu Sans"]
-            plt.rcParams["axes.unicode_minus"] = False
-            return
+from plot_style import configure_chinese_font
 
 
 DEFAULT_RESULTS = [
@@ -102,7 +78,7 @@ def _plot_comparison(path: Path, train_metrics: dict[str, float], test_metrics: 
     except ImportError:
         print("未安装 matplotlib，已跳过误差补偿图绘制")
         return
-    _configure_chinese_font(plt)
+    configure_chinese_font(plt)
 
     labels = ["训练水平", "训练三维", "测试水平", "测试三维"]
     original = [

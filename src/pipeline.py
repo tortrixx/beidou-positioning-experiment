@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 from analysis import compute_errors, summarize_errors
+from gnss_systems import validate_systems
 from models import ObsHeader, PositionSolution
 from positioning import single_point_position
 from rinex_nav import parse_rinex_nav
@@ -28,6 +29,7 @@ def run_continuous_pipeline(
         raise ValueError("max_epochs 最大历元数必须 >= 0")
     if max_iter < 1:
         raise ValueError("max_iter 最大迭代次数必须 >= 1")
+    systems = validate_systems(systems)
 
     obs_file = Path(obs_path)
     nav_file = Path(nav_path)
