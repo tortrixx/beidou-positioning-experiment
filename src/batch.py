@@ -65,7 +65,7 @@ def summarize_result_csv(dataset: str, system: str, csv_path: str | Path) -> Dic
 
 def write_summary(path: str | Path, summaries: List[Dict[str, float | int | str]]) -> None:
     if not summaries:
-        raise ValueError("No summaries to write")
+        raise ValueError("没有可写入的汇总结果")
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fields = list(summaries[0].keys())

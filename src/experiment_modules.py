@@ -56,18 +56,18 @@ class RinexDataModule:
         obs_file = Path(obs_path)
         nav_file = Path(nav_path)
         if not obs_file.exists():
-            raise FileNotFoundError(f"Observation file not found: {obs_file}")
+            raise FileNotFoundError(f"观测文件不存在：{obs_file}")
         if not nav_file.exists():
-            raise FileNotFoundError(f"Navigation file not found: {nav_file}")
+            raise FileNotFoundError(f"导航文件不存在：{nav_file}")
 
         obs_header, epochs = parse_rinex_obs(obs_file)
         nav_header, nav_records = parse_rinex_nav(nav_file)
         if obs_header.approx_position_xyz is None:
-            raise ValueError("Missing approximate receiver position in obs header")
+            raise ValueError("观测文件头缺少接收机近似坐标")
         if not epochs:
-            raise ValueError("No observation epochs found")
+            raise ValueError("未读取到观测历元")
         if not nav_records:
-            raise ValueError("No navigation records found")
+            raise ValueError("未读取到导航记录")
         return RinexDataset(obs_header, epochs, nav_header, nav_records)
 
     def valid_observations(
@@ -105,7 +105,7 @@ class SatelliteCorrectionModule:
         time_system: Optional[str] = None,
     ) -> List[SatelliteMeasurement]:
         if receiver_xyz is None:
-            raise ValueError("receiver_xyz is required")
+            raise ValueError("缺少接收机坐标 receiver_xyz")
 
         allowed_systems = tuple(systems)
         elev_mask = math.radians(elev_mask_deg)
@@ -173,7 +173,7 @@ class SinglePointPositioningModule:
         time_system: Optional[str] = None,
     ) -> PositionSolution:
         if approx_xyz is None:
-            raise ValueError("approx_xyz is required")
+            raise ValueError("缺少近似坐标 approx_xyz")
         return single_point_position(
             epoch,
             self.nav_header,
@@ -197,7 +197,7 @@ class ContinuousAnalysisModule:
         reference_xyz: Optional[Tuple[float, float, float]],
     ) -> Tuple[List[Dict[str, float]], Dict[str, float]]:
         if reference_xyz is None:
-            raise ValueError("reference_xyz is required")
+            raise ValueError("缺少参考坐标 reference_xyz")
         errors = compute_errors(solutions, reference_xyz)
         return errors, summarize_errors(errors)
 
@@ -223,9 +223,9 @@ class ContinuousAnalysisModule:
         error_path = out_dir / "error_dop.png"
         trajectory_path = out_dir / "trajectory.png"
         if not plot_error_and_dop(times, horiz, three_d, pdop, str(error_path), sat_counts=sat_counts):
-            raise RuntimeError("Failed to save error/DOP plot")
+            raise RuntimeError("误差/DOP 图保存失败")
         if not plot_trajectory(lat, lon, str(trajectory_path)):
-            raise RuntimeError("Failed to save trajectory plot")
+            raise RuntimeError("轨迹图保存失败")
         return error_path, trajectory_path
 
 

@@ -11,8 +11,8 @@ from data_inventory import summarize_dataset_directory, write_summary_json
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Summarize UrbanNav observation/NMEA files")
-    parser.add_argument("--root", default="data/datasets/urban_nav_hk_medium_urban_1", help="UrbanNav source directory")
+    parser = argparse.ArgumentParser(description="汇总 UrbanNav 观测文件和 NMEA 文件信息")
+    parser.add_argument("--root", default="data/datasets/urban_nav_hk_medium_urban_1", help="UrbanNav 数据目录")
     parser.add_argument("--json", default="data/datasets/urban_nav_hk_medium_urban_1/metadata.json")
     parser.add_argument("--csv", default="data/datasets/urban_nav_hk_medium_urban_1/observations.csv")
     args = parser.parse_args()
@@ -21,16 +21,16 @@ def main() -> None:
     write_summary_json(args.json, summary)
     _write_observation_csv(Path(args.csv), summary["observations"])
 
-    print(f"Dataset: {summary['dataset_id']}")
-    print(f"Observation files: {len(summary['observations'])}")
-    print(f"Navigation files: {len(summary['navigation_files'])}")
+    print(f"数据集：{summary['dataset_id']}")
+    print(f"观测文件数：{len(summary['observations'])}")
+    print(f"导航文件数：{len(summary['navigation_files'])}")
     for row in summary["observations"]:
         print(
-            f"{row['receiver']}: epochs={row['epochs']} systems={row['systems']} "
-            f"bds_epochs={row['bds_epochs']} nmea={row['has_nmea']}"
+            f"{row['receiver']}：历元数={row['epochs']} 系统={row['systems']} "
+            f"北斗历元数={row['bds_epochs']} NMEA={row['has_nmea']}"
         )
-    print(f"Metadata saved: {args.json}")
-    print(f"Observation summary saved: {args.csv}")
+    print(f"元数据已保存：{args.json}")
+    print(f"观测摘要已保存：{args.csv}")
 
 
 def _write_observation_csv(path: Path, rows: list[dict]) -> None:
@@ -58,4 +58,8 @@ def _write_observation_csv(path: Path, rows: list[dict]) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (FileNotFoundError, ValueError, RuntimeError) as exc:
+        print(f"错误：{exc}", file=sys.stderr)
+        raise SystemExit(1)

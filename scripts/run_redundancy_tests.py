@@ -9,10 +9,18 @@ sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 from redundancy import RedundancyCase, run_redundancy_cases, write_redundancy_summary
 
 
+STATUS_TEXT = {
+    "ok": "正常",
+    "warning": "警告",
+    "expected_error": "预期错误",
+    "error": "错误",
+}
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run robustness checks across varied RINEX inputs")
-    parser.add_argument("--output", default="results/redundancy_tests/summary.csv", help="Output summary CSV")
-    parser.add_argument("--max-epochs", type=int, default=20, help="Epoch limit for each runnable case")
+    parser = argparse.ArgumentParser(description="运行多种 RINEX 输入的冗余与容错测试")
+    parser.add_argument("--output", default="results/redundancy_tests/summary.csv", help="汇总 CSV 输出路径")
+    parser.add_argument("--max-epochs", type=int, default=20, help="每个可运行案例的最大历元数")
     args = parser.parse_args()
 
     root = Path("data/datasets")
@@ -75,14 +83,14 @@ def main() -> None:
     write_redundancy_summary(args.output, rows)
     for row in rows:
         print(
-            f"{row['name']}: status={row['status']} systems={row['systems']} "
-            f"solutions={row['solutions']} message={row['message']}"
+            f"{row['name']}：状态={STATUS_TEXT.get(str(row['status']), row['status'])} 系统={row['systems']} "
+            f"有效解={row['solutions']} 信息={row['message']}"
         )
 
     unexpected = [row for row in rows if row["status"] == "error"]
     if unexpected:
         raise SystemExit(1)
-    print(f"Summary saved: {args.output}")
+    print(f"冗余测试汇总已保存：{args.output}")
 
 
 if __name__ == "__main__":

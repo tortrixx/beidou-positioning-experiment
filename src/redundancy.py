@@ -61,7 +61,7 @@ def _run_case(case: RedundancyCase) -> dict[str, object]:
         if case.output_csv is not None:
             write_csv(str(case.output_csv), solutions, errors)
         status = "ok" if len(solutions) >= case.min_solutions else "warning"
-        message = "ok" if status == "ok" else "valid solutions below threshold"
+        message = "正常" if status == "ok" else "有效解数量低于阈值"
         return {
             "name": case.name,
             "status": status,

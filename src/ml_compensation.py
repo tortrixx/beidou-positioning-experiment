@@ -63,7 +63,7 @@ def load_result_rows(paths: Sequence[str | Path]) -> List[Dict[str, str]]:
 
 def split_train_test(rows: Sequence[Dict[str, str]], train_ratio: float = 0.7) -> Tuple[List[Dict[str, str]], List[Dict[str, str]]]:
     if not 0.0 < train_ratio < 1.0:
-        raise ValueError("train_ratio must be between 0 and 1")
+        raise ValueError("train_ratio 训练集比例必须在 0 和 1 之间")
     ordered = sorted(enumerate(rows), key=lambda item: ((item[0] * 1103515245 + 12345) % 2**31))
     split = max(1, min(len(ordered) - 1, int(len(ordered) * train_ratio)))
     train = [row for _, row in ordered[:split]]
@@ -73,7 +73,7 @@ def split_train_test(rows: Sequence[Dict[str, str]], train_ratio: float = 0.7) -
 
 def train_linear_model(rows: Sequence[Dict[str, str]], ridge: float = 1.0e-6) -> LinearCompensationModel:
     if len(rows) < 2:
-        raise ValueError("At least two rows are required for training")
+        raise ValueError("训练至少需要两行样本")
 
     means, scales = _feature_stats(rows, FEATURE_NAMES)
     x_rows = [[1.0] + _scaled_features(row, FEATURE_NAMES, means, scales) for row in rows]
@@ -226,7 +226,7 @@ def _solve_linear(a: List[List[float]], b: List[float]) -> List[float]:
     for col in range(size):
         pivot = max(range(col, size), key=lambda row: abs(matrix[row][col]))
         if abs(matrix[pivot][col]) < 1.0e-12:
-            raise ValueError("Singular regression matrix")
+            raise ValueError("回归矩阵奇异，无法训练模型")
         matrix[col], matrix[pivot] = matrix[pivot], matrix[col]
         scale = matrix[col][col]
         for j in range(col, size + 1):

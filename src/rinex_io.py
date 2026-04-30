@@ -14,8 +14,8 @@ def read_rinex_text(path: str | Path, *, kind: str) -> list[str]:
         or ".d.gz" in lower
     ):
         raise ValueError(
-            "Hatanaka-compressed observation file detected. "
-            "Convert .crx/.d to RINEX .rnx/.obs/.o before processing."
+            "检测到 Hatanaka 压缩观测文件。请先将 .crx/.d 转换为普通 RINEX "
+            ".rnx/.obs/.o 后再处理。"
         )
 
     if lower.endswith(".gz"):

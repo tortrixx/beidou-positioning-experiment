@@ -11,19 +11,19 @@ from plotting import plot_error_and_dop, plot_trajectory
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Continuous GPS SPP processing")
-    parser.add_argument("--obs", default="data/sample/bjfs1170.26o", help="Path to RINEX obs file")
-    parser.add_argument("--nav", default="data/sample/brdc1170.26n", help="Path to RINEX nav file")
-    parser.add_argument("--step", type=int, default=1, help="Process every N epochs")
-    parser.add_argument("--max-epochs", type=int, default=0, help="Limit number of epochs (0 = all)")
-    parser.add_argument("--plot", action="store_true", help="Plot error, DOP, and trajectory")
-    parser.add_argument("--csv", default="results.csv", help="Output CSV path")
-    parser.add_argument("--max-iter", type=int, default=8, help="Max least-squares iterations")
-    parser.add_argument("--err-thresh", type=float, default=0.01, help="Convergence threshold (m)")
-    parser.add_argument("--elev-mask", type=float, default=10.0, help="Elevation mask (deg)")
-    parser.add_argument("--residual-gate", type=float, default=None, help="Post-fit residual gate in meters")
-    parser.add_argument("--systems", default="G", help="GNSS systems, e.g. G or G,C,R")
-    parser.add_argument("--save-plots", default="", help="Save plots to directory instead of show")
+    parser = argparse.ArgumentParser(description="连续历元 GNSS 单点定位处理")
+    parser.add_argument("--obs", default="data/sample/bjfs1170.26o", help="RINEX 观测文件路径")
+    parser.add_argument("--nav", default="data/sample/brdc1170.26n", help="RINEX 导航文件路径")
+    parser.add_argument("--step", type=int, default=1, help="每隔 N 个历元处理一次")
+    parser.add_argument("--max-epochs", type=int, default=0, help="最多处理历元数，0 表示全部")
+    parser.add_argument("--plot", action="store_true", help="绘制误差、DOP 和轨迹图")
+    parser.add_argument("--csv", default="results.csv", help="输出 CSV 路径")
+    parser.add_argument("--max-iter", type=int, default=8, help="最小二乘最大迭代次数")
+    parser.add_argument("--err-thresh", type=float, default=0.01, help="收敛阈值，单位 m")
+    parser.add_argument("--elev-mask", type=float, default=10.0, help="高度角截止角，单位 deg")
+    parser.add_argument("--residual-gate", type=float, default=None, help="验后残差剔除阈值，单位 m")
+    parser.add_argument("--systems", default="G", help="GNSS 系统，例如 G 或 G,C,R")
+    parser.add_argument("--save-plots", default="", help="将图像保存到指定目录，不弹窗显示")
     args = parser.parse_args()
 
     systems = tuple([s.strip() for s in args.systems.split(",") if s.strip()])
@@ -43,27 +43,27 @@ def main() -> None:
     errors = result.errors
     stats = result.stats
 
-    print(f"Solutions: {len(solutions)}")
+    print(f"有效解数量：{len(solutions)}")
     print(
-        "Horizontal RMS/Mean/Max (m): "
+        "水平误差 RMS/均值/最大值 (m)："
         f"{stats['horiz_rms']:.3f} / {stats['horiz_mean']:.3f} / {stats['horiz_max']:.3f}"
     )
     print(
-        "3D RMS/Mean/Max (m): "
+        "三维误差 RMS/均值/最大值 (m)："
         f"{stats['3d_rms']:.3f} / {stats['3d_mean']:.3f} / {stats['3d_max']:.3f}"
     )
 
-    print(f"CSV saved: {args.csv}")
+    print(f"CSV 已保存：{args.csv}")
     if not solutions:
         print(
-            "No valid solutions; skipped plotting. "
-            f"Processed epochs: {stats.get('processed_epochs', 0)}, "
-            f"skipped epochs: {stats.get('skipped_epochs', 0)}"
+            "没有有效定位解，已跳过绘图。"
+            f"处理历元数：{stats.get('processed_epochs', 0)}，"
+            f"跳过历元数：{stats.get('skipped_epochs', 0)}"
         )
         skip_reasons = stats.get("skip_reasons", {})
         if skip_reasons:
             for reason, count in skip_reasons.items():
-                print(f"Skip reason: {reason} ({count})")
+                print(f"跳过原因：{reason}（{count}）")
         return
 
     if args.plot:
@@ -81,9 +81,9 @@ def main() -> None:
             saved_error = plot_error_and_dop(times, horiz, three_d, pdop, save_path=err_path, sat_counts=sat_counts)
             saved_traj = plot_trajectory(lat, lon, save_path=traj_path)
             if saved_error and saved_traj:
-                print(f"Plots saved: {err_path}, {traj_path}")
+                print(f"图像已保存：{err_path}, {traj_path}")
             else:
-                raise RuntimeError("Plot generation failed")
+                raise RuntimeError("图像生成失败")
         else:
             plot_error_and_dop(times, horiz, three_d, pdop, sat_counts=sat_counts)
             plot_trajectory(lat, lon)
@@ -93,5 +93,5 @@ if __name__ == "__main__":
     try:
         main()
     except (FileNotFoundError, ValueError, RuntimeError) as exc:
-        print(f"Error: {exc}", file=sys.stderr)
+        print(f"错误：{exc}", file=sys.stderr)
         raise SystemExit(1)

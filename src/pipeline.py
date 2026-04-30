@@ -23,17 +23,24 @@ def run_continuous_pipeline(
     progress: Optional[Callable[[int, int, PositionSolution], None]] = None,
 ) -> Tuple[ObsHeader, List[PositionSolution], List[Dict[str, float]], Dict[str, float]]:
     if step < 1:
-        raise ValueError("step must be >= 1")
+        raise ValueError("step 步长必须 >= 1")
     if max_epochs < 0:
-        raise ValueError("max_epochs must be >= 0")
+        raise ValueError("max_epochs 最大历元数必须 >= 0")
     if max_iter < 1:
-        raise ValueError("max_iter must be >= 1")
+        raise ValueError("max_iter 最大迭代次数必须 >= 1")
+
+    obs_file = Path(obs_path)
+    nav_file = Path(nav_path)
+    if not obs_file.exists():
+        raise FileNotFoundError(f"观测文件不存在：{obs_file}")
+    if not nav_file.exists():
+        raise FileNotFoundError(f"导航文件不存在：{nav_file}")
 
     obs_header, epochs = parse_rinex_obs(obs_path)
     nav_header, nav_records = parse_rinex_nav(nav_path)
 
     if obs_header.approx_position_xyz is None:
-        raise ValueError("Missing approximate receiver position in obs header")
+        raise ValueError("观测文件头缺少接收机近似坐标")
 
     solutions: List[PositionSolution] = []
     init_xyz = obs_header.approx_position_xyz

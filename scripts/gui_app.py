@@ -27,6 +27,32 @@ from experiment_modules import SoftwareSystemModule
 from plotting import plot_error_and_dop, plot_trajectory
 
 
+def _configure_chinese_font() -> None:
+    try:
+        import matplotlib
+        import matplotlib.font_manager as fm
+    except ImportError:
+        return
+
+    candidates = [
+        "Arial Unicode MS",
+        "PingFang SC",
+        "Heiti SC",
+        "Heiti TC",
+        "Songti SC",
+        "Noto Sans CJK SC",
+        "Microsoft YaHei",
+        "SimHei",
+        "WenQuanYi Zen Hei",
+    ]
+    installed = {font.name for font in fm.fontManager.ttflist}
+    for name in candidates:
+        if name in installed:
+            matplotlib.rcParams["font.sans-serif"] = [name, "DejaVu Sans"]
+            matplotlib.rcParams["axes.unicode_minus"] = False
+            return
+
+
 class Worker(QObject):
     finished = pyqtSignal(object, object, object, object)
     failed = pyqtSignal(str)
@@ -80,7 +106,7 @@ class Worker(QObject):
 class MainWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("Beidou Positioning Experiment")
+        self.setWindowTitle("北斗定位解算实验系统")
         self.resize(640, 520)
 
         self.obs_edit = QLineEdit("data/sample/bjfs1170.26o")
@@ -115,16 +141,16 @@ class MainWindow(QWidget):
         self.log_view = QTextEdit()
         self.log_view.setReadOnly(True)
 
-        browse_obs = QPushButton("Browse...")
-        browse_nav = QPushButton("Browse...")
-        browse_csv = QPushButton("Browse...")
-        browse_obs.clicked.connect(lambda: self._browse(self.obs_edit, "OBS Files (*.o *.obs);;All Files (*)"))
-        browse_nav.clicked.connect(lambda: self._browse(self.nav_edit, "NAV Files (*.n *.nav);;All Files (*)"))
-        browse_csv.clicked.connect(lambda: self._browse_save(self.csv_edit, "CSV Files (*.csv);;All Files (*)"))
+        browse_obs = QPushButton("浏览...")
+        browse_nav = QPushButton("浏览...")
+        browse_csv = QPushButton("浏览...")
+        browse_obs.clicked.connect(lambda: self._browse(self.obs_edit, "观测文件 (*.o *.obs *.rnx *.gz);;所有文件 (*)"))
+        browse_nav.clicked.connect(lambda: self._browse(self.nav_edit, "导航文件 (*.n *.nav *.rnx *.gz);;所有文件 (*)"))
+        browse_csv.clicked.connect(lambda: self._browse_save(self.csv_edit, "CSV 文件 (*.csv);;所有文件 (*)"))
 
-        self.run_btn = QPushButton("Run")
-        self.plot_btn = QPushButton("Plot")
-        self.replay_btn = QPushButton("Replay")
+        self.run_btn = QPushButton("开始解算")
+        self.plot_btn = QPushButton("绘制图像")
+        self.replay_btn = QPushButton("轨迹回放")
         self.run_btn.clicked.connect(self._start_run)
         self.plot_btn.clicked.connect(self._plot)
         self.replay_btn.clicked.connect(self._replay)
@@ -132,15 +158,15 @@ class MainWindow(QWidget):
         self.replay_btn.setEnabled(False)
 
         form = QFormLayout()
-        form.addRow("Obs file", self._row(self.obs_edit, browse_obs))
-        form.addRow("Nav file", self._row(self.nav_edit, browse_nav))
-        form.addRow("Output CSV", self._row(self.csv_edit, browse_csv))
-        form.addRow("Step", self.step_spin)
-        form.addRow("Max epochs (0=all)", self.max_epochs_spin)
-        form.addRow("Max iterations", self.max_iter_spin)
-        form.addRow("Error threshold (m)", self.err_spin)
-        form.addRow("Elevation mask (deg)", self.elev_spin)
-        form.addRow("GNSS systems", self.systems_edit)
+        form.addRow("观测文件", self._row(self.obs_edit, browse_obs))
+        form.addRow("导航文件", self._row(self.nav_edit, browse_nav))
+        form.addRow("输出 CSV", self._row(self.csv_edit, browse_csv))
+        form.addRow("处理步长", self.step_spin)
+        form.addRow("最大历元数（0=全部）", self.max_epochs_spin)
+        form.addRow("最大迭代次数", self.max_iter_spin)
+        form.addRow("误差阈值 (m)", self.err_spin)
+        form.addRow("高度角截止角 (deg)", self.elev_spin)
+        form.addRow("GNSS 系统", self.systems_edit)
 
         btn_row = QHBoxLayout()
         btn_row.addWidget(self.run_btn)
@@ -150,12 +176,12 @@ class MainWindow(QWidget):
         layout = QVBoxLayout()
         layout.addLayout(form)
         layout.addLayout(btn_row)
-        layout.addWidget(QLabel("Realtime position"))
-        self.pos_label = QLabel("Lat: -  Lon: -  H: -")
-        self.stat_label = QLabel("Used sats: -  PDOP: -")
+        layout.addWidget(QLabel("实时定位结果"))
+        self.pos_label = QLabel("纬度：-  经度：-  高程：-")
+        self.stat_label = QLabel("参与解算卫星数：-  PDOP：-")
         layout.addWidget(self.pos_label)
         layout.addWidget(self.stat_label)
-        layout.addWidget(QLabel("Log"))
+        layout.addWidget(QLabel("运行日志"))
         layout.addWidget(self.log_view)
         self.setLayout(layout)
 
@@ -177,12 +203,12 @@ class MainWindow(QWidget):
         return wrapper
 
     def _browse(self, target: QLineEdit, pattern: str) -> None:
-        path, _ = QFileDialog.getOpenFileName(self, "Select file", "", pattern)
+        path, _ = QFileDialog.getOpenFileName(self, "选择文件", "", pattern)
         if path:
             target.setText(path)
 
     def _browse_save(self, target: QLineEdit, pattern: str) -> None:
-        path, _ = QFileDialog.getSaveFileName(self, "Save file", target.text(), pattern)
+        path, _ = QFileDialog.getSaveFileName(self, "保存文件", target.text(), pattern)
         if path:
             target.setText(path)
 
@@ -194,7 +220,7 @@ class MainWindow(QWidget):
         self.plot_btn.setEnabled(False)
         self.replay_btn.setEnabled(False)
         self._last_log_count = 0
-        self._append_log("Running...")
+        self._append_log("正在解算...")
 
         systems = [s.strip() for s in self.systems_edit.text().split(",") if s.strip()]
 
@@ -227,12 +253,12 @@ class MainWindow(QWidget):
             skip_reasons = stats.get("skip_reasons", {})
             reason_text = "; ".join(f"{reason}: {count}" for reason, count in skip_reasons.items())
             self._append_log(
-                "No valid positioning solutions. "
-                f"Processed epochs: {stats.get('processed_epochs', 0)}, "
-                f"skipped epochs: {stats.get('skipped_epochs', 0)}"
+                "没有有效定位解。"
+                f"处理历元数：{stats.get('processed_epochs', 0)}，"
+                f"跳过历元数：{stats.get('skipped_epochs', 0)}"
             )
             if reason_text:
-                self._append_log(f"Skip reasons: {reason_text}")
+                self._append_log(f"跳过原因：{reason_text}")
             self.run_btn.setEnabled(True)
             self.plot_btn.setEnabled(False)
             self.replay_btn.setEnabled(False)
@@ -240,9 +266,9 @@ class MainWindow(QWidget):
             self.thread.quit()
             return
         self._append_log(
-            f"Solutions: {len(solutions)} | "
-            f"Horiz RMS/Mean/Max: {stats['horiz_rms']:.3f}/{stats['horiz_mean']:.3f}/{stats['horiz_max']:.3f} | "
-            f"3D RMS/Mean/Max: {stats['3d_rms']:.3f}/{stats['3d_mean']:.3f}/{stats['3d_max']:.3f}"
+            f"有效解数量：{len(solutions)} | "
+            f"水平误差 RMS/均值/最大值：{stats['horiz_rms']:.3f}/{stats['horiz_mean']:.3f}/{stats['horiz_max']:.3f} | "
+            f"三维误差 RMS/均值/最大值：{stats['3d_rms']:.3f}/{stats['3d_mean']:.3f}/{stats['3d_max']:.3f}"
         )
         self.run_btn.setEnabled(True)
         self.plot_btn.setEnabled(True)
@@ -251,7 +277,7 @@ class MainWindow(QWidget):
         self.thread.quit()
 
     def _on_failed(self, message: str) -> None:
-        self._append_log(f"Error: {message}")
+        self._append_log(f"错误：{message}")
         self.run_btn.setEnabled(True)
         self.plot_btn.setEnabled(False)
         self.replay_btn.setEnabled(False)
@@ -260,11 +286,11 @@ class MainWindow(QWidget):
 
     def _on_progress(self, epoch_idx: int, count: int, sol) -> None:
         self.pos_label.setText(
-            f"Lat: {sol.position_blh[0]:.6f}  Lon: {sol.position_blh[1]:.6f}  H: {sol.position_blh[2]:.2f}"
+            f"纬度：{sol.position_blh[0]:.6f}  经度：{sol.position_blh[1]:.6f}  高程：{sol.position_blh[2]:.2f}"
         )
-        self.stat_label.setText(f"Used sats: {len(sol.used_sats)}  PDOP: {sol.pdop:.3f}")
+        self.stat_label.setText(f"参与解算卫星数：{len(sol.used_sats)}  PDOP：{sol.pdop:.3f}")
         if count - self._last_log_count >= 50:
-            self._append_log(f"Epoch {epoch_idx} | Solutions {count}")
+            self._append_log(f"历元 {epoch_idx} | 有效解 {count}")
             self._last_log_count = count
 
     def _plot(self) -> None:
@@ -287,8 +313,9 @@ class MainWindow(QWidget):
             from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
             from matplotlib.figure import Figure
         except ImportError:
-            self._append_log("matplotlib not available; replay disabled")
+            self._append_log("未安装 matplotlib，无法进行轨迹回放")
             return
+        _configure_chinese_font()
 
         lat = [sol.position_blh[0] for sol in self._solutions]
         lon = [sol.position_blh[1] for sol in self._solutions]
@@ -303,15 +330,15 @@ class MainWindow(QWidget):
             self._replay_timer = None
 
         dialog = QDialog(self)
-        dialog.setWindowTitle("Trajectory Replay")
+        dialog.setWindowTitle("轨迹回放")
         dialog.resize(640, 640)
         layout = QVBoxLayout()
 
         fig = Figure(figsize=(6, 6))
         canvas = FigureCanvas(fig)
         ax = fig.add_subplot(111)
-        ax.set_xlabel("Longitude (deg)")
-        ax.set_ylabel("Latitude (deg)")
+        ax.set_xlabel("经度 (deg)")
+        ax.set_ylabel("纬度 (deg)")
         ax.grid(True, linestyle="--", alpha=0.5)
         ax.set_aspect("equal", adjustable="box")
 
@@ -347,7 +374,7 @@ class MainWindow(QWidget):
                 canvas.draw_idle()
                 self._replay_index += 1
             except Exception as exc:
-                self._append_log(f"Replay error: {exc}")
+                self._append_log(f"轨迹回放错误：{exc}")
                 self._replay_timer.stop()
 
         self._replay_timer.timeout.connect(advance)

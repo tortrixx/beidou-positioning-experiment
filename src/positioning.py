@@ -60,9 +60,9 @@ def _default_residual_gate_m(systems: Tuple[str, ...]) -> float:
 def _validate_receiver_state(lat: float, lon: float, height_m: float) -> None:
     values = (lat, lon, height_m)
     if not all(math.isfinite(value) for value in values):
-        raise ValueError("Receiver state is not finite")
+        raise ValueError("接收机状态不是有限数值")
     if height_m < -1000.0 or height_m > 50000.0:
-        raise ValueError("Receiver height is outside the supported SPP range")
+        raise ValueError("接收机高度超出当前 SPP 支持范围")
 
 
 def _elevation_weight(elev_rad: float) -> float:
@@ -75,7 +75,7 @@ def _solve_linear(a: List[List[float]], b: List[float]) -> List[float]:
     for col in range(size):
         pivot = max(range(col, size), key=lambda r: abs(m[r][col]))
         if abs(m[pivot][col]) < 1e-12:
-            raise ValueError("Singular normal matrix")
+            raise ValueError("法方程矩阵奇异，无法解算")
         m[col], m[pivot] = m[pivot], m[col]
         scale = m[col][col]
         for j in range(col, size + 1):
@@ -95,7 +95,7 @@ def _invert_matrix(a: List[List[float]]) -> List[List[float]]:
     for col in range(size):
         pivot = max(range(col, size), key=lambda r: abs(m[r][col]))
         if abs(m[pivot][col]) < 1e-12:
-            raise ValueError("Singular normal matrix")
+            raise ValueError("法方程矩阵奇异，无法计算 DOP")
         m[col], m[pivot] = m[pivot], m[col]
         scale = m[col][col]
         for j in range(col, size * 2):
@@ -200,7 +200,7 @@ def single_point_position(
 
         unknown_count = 3 + len(active_systems)
         if len(geometry_rows) < unknown_count:
-            raise ValueError("Not enough satellites for positioning")
+            raise ValueError("参与定位的卫星数量不足")
 
         normal = [[0.0 for _ in range(unknown_count)] for _ in range(unknown_count)]
         rhs = [0.0 for _ in range(unknown_count)]
@@ -215,7 +215,7 @@ def single_point_position(
 
         dxs = _solve_linear(normal, rhs)
         if not all(math.isfinite(delta) for delta in dxs):
-            raise ValueError("Positioning update is not finite")
+            raise ValueError("定位迭代结果不是有限数值")
         x += dxs[0]
         y += dxs[1]
         z += dxs[2]

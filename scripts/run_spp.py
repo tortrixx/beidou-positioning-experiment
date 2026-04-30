@@ -10,15 +10,15 @@ from experiment_modules import RinexDataModule, SinglePointPositioningModule
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Single-epoch GPS SPP solver")
-    parser.add_argument("--obs", default="data/sample/bjfs1170.26o", help="Path to RINEX obs file")
-    parser.add_argument("--nav", default="data/sample/brdc1170.26n", help="Path to RINEX nav file")
-    parser.add_argument("--epoch", type=int, default=0, help="Epoch index (0-based)")
-    parser.add_argument("--max-iter", type=int, default=8, help="Max least-squares iterations")
-    parser.add_argument("--err-thresh", type=float, default=0.01, help="Convergence threshold (m)")
-    parser.add_argument("--elev-mask", type=float, default=10.0, help="Elevation mask (deg)")
-    parser.add_argument("--residual-gate", type=float, default=None, help="Post-fit residual gate in meters")
-    parser.add_argument("--systems", default="G", help="GNSS systems, e.g. G or G,C,R")
+    parser = argparse.ArgumentParser(description="单历元 GNSS 单点定位解算")
+    parser.add_argument("--obs", default="data/sample/bjfs1170.26o", help="RINEX 观测文件路径")
+    parser.add_argument("--nav", default="data/sample/brdc1170.26n", help="RINEX 导航文件路径")
+    parser.add_argument("--epoch", type=int, default=0, help="历元索引，从 0 开始")
+    parser.add_argument("--max-iter", type=int, default=8, help="最小二乘最大迭代次数")
+    parser.add_argument("--err-thresh", type=float, default=0.01, help="收敛阈值，单位 m")
+    parser.add_argument("--elev-mask", type=float, default=10.0, help="高度角截止角，单位 deg")
+    parser.add_argument("--residual-gate", type=float, default=None, help="验后残差剔除阈值，单位 m")
+    parser.add_argument("--systems", default="G", help="GNSS 系统，例如 G 或 G,C,R")
     args = parser.parse_args()
 
     dataset = RinexDataModule().load(args.obs, args.nav)
@@ -26,7 +26,7 @@ def main() -> None:
     epochs = dataset.epochs
 
     if args.epoch >= len(epochs):
-        raise ValueError("Epoch index out of range")
+        raise ValueError("历元索引超出范围")
 
     systems = tuple([s.strip() for s in args.systems.split(",") if s.strip()])
     solver = SinglePointPositioningModule(dataset.nav_header, dataset.nav_records)
@@ -41,11 +41,11 @@ def main() -> None:
         time_system=obs_header.time_system,
     )
 
-    print(f"Epoch: {solution.time}")
+    print(f"历元时间：{solution.time}")
     print(f"ECEF: {solution.position_ecef[0]:.3f}, {solution.position_ecef[1]:.3f}, {solution.position_ecef[2]:.3f}")
-    print(f"BLH: {solution.position_blh[0]:.8f}, {solution.position_blh[1]:.8f}, {solution.position_blh[2]:.3f}")
-    print(f"Clock bias (m): {solution.clock_bias_m:.3f}")
-    print(f"Used satellites: {len(solution.used_sats)}")
+    print(f"BLH 经纬高：{solution.position_blh[0]:.8f}, {solution.position_blh[1]:.8f}, {solution.position_blh[2]:.3f}")
+    print(f"接收机钟差 (m)：{solution.clock_bias_m:.3f}")
+    print(f"参与解算卫星数：{len(solution.used_sats)}")
     print(f"PDOP: {solution.pdop:.3f}  GDOP: {solution.gdop:.3f}")
 
 
@@ -53,5 +53,5 @@ if __name__ == "__main__":
     try:
         main()
     except (FileNotFoundError, ValueError, RuntimeError) as exc:
-        print(f"Error: {exc}", file=sys.stderr)
+        print(f"错误：{exc}", file=sys.stderr)
         raise SystemExit(1)

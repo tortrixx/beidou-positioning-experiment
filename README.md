@@ -225,7 +225,7 @@ python3 scripts/plot_results.py \
   --save-dir results/demo
 ```
 
-该模块主要展示连续历元数量、水平误差 RMS/Mean/Max、三维误差 RMS/Mean/Max、误差/DOP/卫星数散点图和轨迹散点图。
+该模块主要展示连续历元数量、水平误差 RMS/Mean/Max、三维误差 RMS/Mean/Max、误差/DOP/卫星数曲线图和轨迹散点图。
 
 ### 模块5：完整软件系统整合与 GUI 演示
 启动图形界面：
@@ -235,20 +235,20 @@ python3 scripts/gui_app.py
 
 GUI 推荐演示参数：
 ```text
-Obs file: data/sample/bjfs1170.26o
-Nav file: data/sample/brdc1170.26n
-Output CSV: results/gui_demo.csv
-Step: 1
-Max epochs: 200
-Max iterations: 8
-Error threshold: 0.01
-Elevation mask: 10
-GNSS systems: G
+观测文件：data/sample/bjfs1170.26o
+导航文件：data/sample/brdc1170.26n
+输出 CSV：results/gui_demo.csv
+处理步长：1
+最大历元数：200
+最大迭代次数：8
+误差阈值：0.01
+高度角截止角：10
+GNSS 系统：G
 ```
 
 操作顺序：
 ```text
-Run -> Plot -> Replay
+开始解算 -> 绘制图像 -> 轨迹回放
 ```
 
 该模块主要展示 RINEX 数据导入、解算参数设置、定位结果实时显示、误差曲线查看和定位轨迹回放。
@@ -271,17 +271,17 @@ python3 scripts/gui_app.py
 ```
 
 GUI 参数说明：
-- Obs/Nav file：选择观测/导航文件
-- Output CSV：设置输出路径
-- Step / Max epochs：抽样步长与最大历元数
-- Max iterations / Error threshold：迭代上限与收敛阈值
-- Elevation mask：高度角掩码
-- GNSS systems：默认 `G`（GPS），可填 `C`（BDS）或 `G,C`（GPS+BDS）
+- 观测文件/导航文件：选择 RINEX 观测文件和导航文件
+- 输出 CSV：设置结果输出路径
+- 处理步长/最大历元数：抽样步长与最大处理历元数
+- 最大迭代次数/误差阈值：迭代上限与收敛阈值
+- 高度角截止角：低高度角卫星过滤阈值
+- GNSS 系统：默认 `G`（GPS），可填 `C`（BDS）或 `G,C`（GPS+BDS）
 
 按钮：
-- Run：开始连续定位
-- Plot：显示误差/DOP 与轨迹散点图
-- Replay：轨迹回放
+- 开始解算：开始连续定位
+- 绘制图像：显示误差/DOP/卫星数曲线图与轨迹散点图
+- 轨迹回放：动态回放定位轨迹
 
 ## 输出结果
 - `results.csv`：位置、DOP、误差时间序列

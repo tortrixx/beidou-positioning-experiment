@@ -235,8 +235,8 @@ class ExperimentModuleTests(unittest.TestCase):
             )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Solutions: 0", result.stdout)
-        self.assertIn("No valid solutions", result.stdout)
+        self.assertIn("有效解数量：0", result.stdout)
+        self.assertIn("没有有效定位解", result.stdout)
 
     def test_plot_results_cli_handles_empty_csv(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -263,7 +263,7 @@ class ExperimentModuleTests(unittest.TestCase):
             )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("No rows", result.stdout)
+        self.assertIn("CSV 中没有结果行", result.stdout)
 
     def test_inspect_cli_reports_hatanaka_without_traceback(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -306,7 +306,7 @@ class ExperimentModuleTests(unittest.TestCase):
         )
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("Error:", result.stderr)
+        self.assertIn("错误：", result.stderr)
         self.assertNotIn("Traceback", result.stderr)
 
     def test_continuous_cli_reports_invalid_input_without_traceback(self) -> None:
@@ -326,7 +326,7 @@ class ExperimentModuleTests(unittest.TestCase):
         )
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("Error:", result.stderr)
+        self.assertIn("错误：", result.stderr)
         self.assertNotIn("Traceback", result.stderr)
 
     def test_urban_nav_inventory_detects_bds_observation_files(self) -> None:
@@ -387,8 +387,8 @@ class ExperimentModuleTests(unittest.TestCase):
         )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("OBS version:", result.stdout)
-        self.assertIn("NAV records:", result.stdout)
+        self.assertIn("观测文件版本：", result.stdout)
+        self.assertIn("导航记录数：", result.stdout)
 
     def test_continuous_pipeline_rejects_zero_step(self) -> None:
         from pipeline import run_continuous_pipeline

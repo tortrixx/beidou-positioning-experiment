@@ -11,9 +11,9 @@ from plotting import plot_error_and_dop, plot_trajectory
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Plot positioning results from CSV")
-    parser.add_argument("--csv", default="results.csv", help="Results CSV path")
-    parser.add_argument("--save-dir", default="", help="Save plots to directory instead of show")
+    parser = argparse.ArgumentParser(description="从定位结果 CSV 绘制误差图和轨迹图")
+    parser.add_argument("--csv", default="results.csv", help="定位结果 CSV 路径")
+    parser.add_argument("--save-dir", default="", help="保存图像的目录；为空则弹窗显示")
     args = parser.parse_args()
 
     times = []
@@ -36,7 +36,7 @@ def main() -> None:
             lon.append(float(row["lon"]))
 
     if not times:
-        print(f"No rows in {args.csv}; skipped plotting")
+        print(f"CSV 中没有结果行：{args.csv}，已跳过绘图")
         return
 
     if args.save_dir:
@@ -45,9 +45,9 @@ def main() -> None:
         saved_error = plot_error_and_dop(times, horiz, three_d, pdop, save_path=err_path, sat_counts=sat_counts)
         saved_traj = plot_trajectory(lat, lon, save_path=traj_path)
         if saved_error and saved_traj:
-            print(f"Plots saved: {err_path}, {traj_path}")
+            print(f"图像已保存：{err_path}, {traj_path}")
         else:
-            raise RuntimeError("Plot generation failed")
+            raise RuntimeError("图像生成失败")
     else:
         plot_error_and_dop(times, horiz, three_d, pdop, sat_counts=sat_counts)
         plot_trajectory(lat, lon)

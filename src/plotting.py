@@ -4,6 +4,31 @@ from pathlib import Path
 from typing import Iterable, Optional
 
 
+def _configure_chinese_font(plt) -> None:
+    try:
+        import matplotlib.font_manager as fm
+    except ImportError:
+        return
+
+    candidates = [
+        "Arial Unicode MS",
+        "PingFang SC",
+        "Heiti SC",
+        "Heiti TC",
+        "Songti SC",
+        "Noto Sans CJK SC",
+        "Microsoft YaHei",
+        "SimHei",
+        "WenQuanYi Zen Hei",
+    ]
+    installed = {font.name for font in fm.fontManager.ttflist}
+    for name in candidates:
+        if name in installed:
+            plt.rcParams["font.sans-serif"] = [name, "DejaVu Sans"]
+            plt.rcParams["axes.unicode_minus"] = False
+            return
+
+
 def plot_error_and_dop(
     times: Iterable[float],
     horiz: Iterable[float],
@@ -19,8 +44,9 @@ def plot_error_and_dop(
             matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except ImportError:
-        print("matplotlib not available; skip plotting")
+        print("未安装 matplotlib，已跳过绘图")
         return False
+    _configure_chinese_font(plt)
 
     time_list = list(times)
     horiz_list = list(horiz)
@@ -28,27 +54,27 @@ def plot_error_and_dop(
     pdop_list = list(pdop)
     sat_count_list = list(sat_counts) if sat_counts is not None else None
     if not time_list:
-        print("No positioning data to plot")
+        print("没有可绘制的定位数据")
         return False
 
     row_count = 3 if sat_count_list is not None else 2
     fig, axes = plt.subplots(row_count, 1, figsize=(10, 3 * row_count), sharex=True)
-    axes[0].plot(time_list, horiz_list, label="Horizontal error (m)", linewidth=1.4)
-    axes[0].plot(time_list, three_d_list, label="3D error (m)", linewidth=1.4)
-    axes[0].set_ylabel("Error (m)")
+    axes[0].plot(time_list, horiz_list, label="水平误差 (m)", linewidth=1.4)
+    axes[0].plot(time_list, three_d_list, label="三维误差 (m)", linewidth=1.4)
+    axes[0].set_ylabel("误差 (m)")
     axes[0].legend()
     axes[0].grid(True, linestyle="--", alpha=0.5)
 
     axes[1].plot(time_list, pdop_list, label="PDOP", linewidth=1.4)
-    axes[1].set_xlabel("Epoch index")
+    axes[1].set_xlabel("历元索引")
     axes[1].set_ylabel("DOP")
     axes[1].grid(True, linestyle="--", alpha=0.5)
     axes[1].legend()
 
     if sat_count_list is not None:
-        axes[2].plot(time_list, sat_count_list, label="Visible/used satellites", linewidth=1.4)
-        axes[2].set_xlabel("Epoch index")
-        axes[2].set_ylabel("Sat count")
+        axes[2].plot(time_list, sat_count_list, label="参与解算卫星数", linewidth=1.4)
+        axes[2].set_xlabel("历元索引")
+        axes[2].set_ylabel("卫星数")
         axes[2].grid(True, linestyle="--", alpha=0.5)
         axes[2].legend()
 
@@ -75,19 +101,20 @@ def plot_trajectory(
             matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except ImportError:
-        print("matplotlib not available; skip plotting")
+        print("未安装 matplotlib，已跳过绘图")
         return False
+    _configure_chinese_font(plt)
 
     lat_list = list(lat)
     lon_list = list(lon)
     if not lat_list or not lon_list:
-        print("No trajectory data")
+        print("没有可绘制的轨迹数据")
         return False
 
     fig, ax = plt.subplots(1, 1, figsize=(6, 6))
     ax.scatter(lon_list, lat_list, s=12, alpha=0.75)
-    ax.set_xlabel("Longitude (deg)")
-    ax.set_ylabel("Latitude (deg)")
+    ax.set_xlabel("经度 (deg)")
+    ax.set_ylabel("纬度 (deg)")
     ax.grid(True, linestyle="--", alpha=0.5)
     ax.set_aspect("equal", adjustable="box")
 
@@ -111,18 +138,19 @@ def playback_trajectory(
         import matplotlib.pyplot as plt
         from matplotlib.animation import FuncAnimation
     except ImportError:
-        print("matplotlib not available; skip playback")
+        print("未安装 matplotlib，已跳过轨迹回放")
         return None
+    _configure_chinese_font(plt)
 
     lat_list = list(lat)
     lon_list = list(lon)
     if not lat_list or not lon_list:
-        print("No trajectory data")
+        print("没有可回放的轨迹数据")
         return None
 
     fig, ax = plt.subplots(1, 1, figsize=(6, 6))
-    ax.set_xlabel("Longitude (deg)")
-    ax.set_ylabel("Latitude (deg)")
+    ax.set_xlabel("经度 (deg)")
+    ax.set_ylabel("纬度 (deg)")
     ax.grid(True, linestyle="--", alpha=0.5)
     ax.set_aspect("equal", adjustable="box")
 
