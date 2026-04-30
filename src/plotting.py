@@ -33,20 +33,20 @@ def plot_error_and_dop(
 
     row_count = 3 if sat_count_list is not None else 2
     fig, axes = plt.subplots(row_count, 1, figsize=(10, 3 * row_count), sharex=True)
-    axes[0].scatter(time_list, horiz_list, label="Horizontal error (m)", s=12, alpha=0.75)
-    axes[0].scatter(time_list, three_d_list, label="3D error (m)", s=12, alpha=0.75)
+    axes[0].plot(time_list, horiz_list, label="Horizontal error (m)", linewidth=1.4)
+    axes[0].plot(time_list, three_d_list, label="3D error (m)", linewidth=1.4)
     axes[0].set_ylabel("Error (m)")
     axes[0].legend()
     axes[0].grid(True, linestyle="--", alpha=0.5)
 
-    axes[1].scatter(time_list, pdop_list, label="PDOP", s=12, alpha=0.75)
+    axes[1].plot(time_list, pdop_list, label="PDOP", linewidth=1.4)
     axes[1].set_xlabel("Epoch index")
     axes[1].set_ylabel("DOP")
     axes[1].grid(True, linestyle="--", alpha=0.5)
     axes[1].legend()
 
     if sat_count_list is not None:
-        axes[2].scatter(time_list, sat_count_list, label="Visible/used satellites", s=12, alpha=0.75)
+        axes[2].plot(time_list, sat_count_list, label="Visible/used satellites", linewidth=1.4)
         axes[2].set_xlabel("Epoch index")
         axes[2].set_ylabel("Sat count")
         axes[2].grid(True, linestyle="--", alpha=0.5)

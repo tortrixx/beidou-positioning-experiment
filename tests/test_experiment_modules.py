@@ -162,7 +162,7 @@ class ExperimentModuleTests(unittest.TestCase):
         self.assertEqual(by_name["sample_no_selected_system"]["status"], "warning")
         self.assertEqual(by_name["hatanka_expected"]["status"], "expected_error")
 
-    def test_plotting_uses_scatter_points_not_lines(self) -> None:
+    def test_plotting_keeps_error_lines_and_trajectory_scatter(self) -> None:
         import matplotlib
 
         matplotlib.use("Agg")
@@ -175,8 +175,8 @@ class ExperimentModuleTests(unittest.TestCase):
         try:
             self.assertTrue(plot_error_and_dop([0, 1], [1.0, 2.0], [2.0, 3.0], [1.5, 1.6], sat_counts=[8, 9]))
             error_fig = plt.gcf()
-            self.assertGreater(sum(len(ax.collections) for ax in error_fig.axes), 0)
-            self.assertEqual(sum(len(ax.lines) for ax in error_fig.axes), 0)
+            self.assertEqual(sum(len(ax.collections) for ax in error_fig.axes), 0)
+            self.assertGreaterEqual(sum(len(ax.lines) for ax in error_fig.axes), 4)
             plt.close(error_fig)
 
             self.assertTrue(plot_trajectory([39.0, 39.1], [116.0, 116.1]))
