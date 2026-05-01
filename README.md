@@ -10,7 +10,7 @@ GitHub 仓库：<https://github.com/tortrixx/beidou-positioning-experiment>
 | --- | --- |
 | 源码 | `src/`, `scripts/`, `tests/` |
 | 测试数据 | `data/sample/`, `data/datasets/` |
-| 结果图表 | `results/datasets/`, `results/gui_main_window.png`, `results/ml_compensation/` |
+| 结果图表 | `reports/latex/figures/`, `results/datasets/`, `results/ml_compensation/` |
 | LaTeX 报告 | `reports/latex/main.tex` |
 | Markdown 备份报告 | `reports/final_*.md`, `reports/project_explanation_guide.md` |
 
@@ -116,17 +116,17 @@ GNSS 系统：C
 
 GUI 主界面：
 
-![GUI 主界面](results/gui_main_window.png)
+![GUI 主界面](reports/latex/figures/gui_main_window.png)
 
 误差/DOP/卫星数曲线与轨迹散点图示例：
 
 | 误差曲线 | 轨迹散点图 |
 | --- | --- |
-| ![BJFS 误差曲线](results/datasets/bjfs_2026_117_gps/error_dop.png) | ![BJFS 轨迹图](results/datasets/bjfs_2026_117_gps/trajectory.png) |
+| ![UrbanNav BDS 误差曲线](reports/latex/figures/urban_nav_bds_final/error_dop.png) | ![UrbanNav BDS 轨迹散点图](reports/latex/figures/urban_nav_bds_final/trajectory.png) |
 
 附加题误差补偿结果：
 
-![误差补偿](results/ml_compensation/compensation_comparison.png)
+![误差补偿](reports/latex/figures/ml_compensation/compensation_comparison.png)
 
 ## 数据与结果说明
 
