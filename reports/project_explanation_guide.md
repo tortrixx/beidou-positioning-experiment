@@ -413,17 +413,17 @@ python3 scripts/gui_app.py
 
 GUI 截图：
 
-![GUI](../results/gui_main_window.png)
+![GUI](latex/figures/gui_main_window.png)
 
 ### 9.7 第七步：展示结果图片
 
-BJFS GPS 误差/DOP/卫星数曲线：
+UrbanNav BDS 误差/DOP/卫星数曲线：
 
-![BJFS error dop](../results/datasets/bjfs_2026_117_gps/error_dop.png)
+![UrbanNav BDS error dop](latex/figures/urban_nav_bds_final/error_dop.png)
 
 GPS+BDS 误差/DOP/卫星数曲线：
 
-![GPS BDS error dop](../results/datasets/twtf_2026_117_gps_bds/error_dop.png)
+![GPS BDS error dop](latex/figures/twtf_gps_bds_final/error_dop.png)
 
 ### 9.8 第八步：展示附加题
 
@@ -434,7 +434,7 @@ python3 scripts/train_error_model.py --output-dir results/ml_compensation
 
 展示补偿前后对比图：
 
-![compensation](../results/ml_compensation/compensation_comparison.png)
+![compensation](latex/figures/ml_compensation/compensation_comparison.png)
 
 说明线性回归模型将测试集 3D RMS 从 5.716 m 降到 3.373 m。
 

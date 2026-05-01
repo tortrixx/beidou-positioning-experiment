@@ -37,13 +37,15 @@ The main index is:
 
 ## Result Outputs
 
-Generated CSV and plots are stored under:
+Generated CSV outputs are stored under:
 
 `results/datasets/`
 
-Only selected report figures and summary outputs are committed. Detailed
-per-dataset CSV files and UrbanNav stress-test plots can be regenerated with
-the commands below.
+Final report figures and README demo images are stored under:
+
+`reports/latex/figures/`
+
+Detailed per-dataset plots can be regenerated with the commands below.
 
 | Dataset output | Horizontal RMS / Mean / Max (m) | 3D RMS / Mean / Max (m) |
 | --- | --- | --- |

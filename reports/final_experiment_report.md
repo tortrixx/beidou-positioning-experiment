@@ -105,7 +105,7 @@ GPS+BDS 联合定位时，状态向量包含每个系统独立的接收机钟差
 
 GUI 主界面如下：
 
-![GUI 主界面](../results/gui_main_window.png)
+![GUI 主界面](latex/figures/gui_main_window.png)
 
 界面可设置观测文件、导航文件、输出 CSV、步长、最大历元、迭代次数、误差阈值、高度角和 GNSS 系统。运行过程中会实时显示最新定位结果、使用卫星数和 PDOP；运行完成后可查看误差曲线并回放轨迹。
 
@@ -124,21 +124,21 @@ GUI 主界面如下：
 
 ### 6.2 典型图表
 
-BJFS GPS 误差、PDOP 与卫星数曲线：
+UrbanNav BDS 误差、PDOP 与卫星数曲线：
 
-![BJFS error dop](../results/datasets/bjfs_2026_117_gps/error_dop.png)
+![UrbanNav BDS error dop](latex/figures/urban_nav_bds_final/error_dop.png)
 
-BJFS GPS 轨迹图：
+UrbanNav BDS 轨迹散点图：
 
-![BJFS trajectory](../results/datasets/bjfs_2026_117_gps/trajectory.png)
+![UrbanNav BDS trajectory](latex/figures/urban_nav_bds_final/trajectory.png)
 
 TWTF BDS-only 误差、PDOP 与卫星数曲线：
 
-![TWTF BDS error dop](../results/datasets/twtf_2026_117_bds/error_dop.png)
+![TWTF BDS error dop](latex/figures/twtf_bds_final/error_dop.png)
 
 TWTF GPS+BDS 误差、PDOP 与卫星数曲线：
 
-![TWTF GPS BDS error dop](../results/datasets/twtf_2026_117_gps_bds/error_dop.png)
+![TWTF GPS BDS error dop](latex/figures/twtf_gps_bds_final/error_dop.png)
 
 ## 7. 误差分析
 

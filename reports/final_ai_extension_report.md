@@ -105,7 +105,7 @@ python3 scripts/train_error_model.py --output-dir results/ml_compensation
 | --- | --- |
 | `results/ml_compensation/linear_model.json` | 训练得到的模型参数 |
 | `results/ml_compensation/metrics.csv` | 训练集/测试集补偿前后指标 |
-| `results/ml_compensation/compensation_comparison.png` | 补偿前后 RMS 对比图 |
+| `reports/latex/figures/ml_compensation/compensation_comparison.png` | 补偿前后 RMS 对比图 |
 
 说明：逐样本预测明细可由 `scripts/train_error_model.py` 重新生成，但为保持提交包精简，最终仓库只保留模型、指标和对比图。
 
@@ -118,7 +118,7 @@ python3 scripts/train_error_model.py --output-dir results/ml_compensation
 
 补偿前后 RMS 对比图：
 
-![误差补偿对比](../results/ml_compensation/compensation_comparison.png)
+![误差补偿对比](latex/figures/ml_compensation/compensation_comparison.png)
 
 ## 7. 效果分析
 

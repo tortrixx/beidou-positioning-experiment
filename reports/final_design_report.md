@@ -102,7 +102,7 @@ GUI 使用 PyQt5，主界面提供：
 - 运行过程实时显示纬度、经度、高程、使用卫星数、PDOP；
 - 误差曲线查看与轨迹回放。
 
-![GUI 主界面](../results/gui_main_window.png)
+![GUI 主界面](latex/figures/gui_main_window.png)
 
 ## 7. 程序清单
 

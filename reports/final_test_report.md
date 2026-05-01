@@ -45,25 +45,25 @@
 
 ## 5. 图表结果
 
-BJFS GPS 误差、PDOP 与卫星数曲线：
+UrbanNav BDS 误差、PDOP 与卫星数曲线：
 
-![BJFS error dop](../results/datasets/bjfs_2026_117_gps/error_dop.png)
+![UrbanNav BDS error dop](latex/figures/urban_nav_bds_final/error_dop.png)
 
-BJFS GPS 轨迹图：
+UrbanNav BDS 轨迹散点图：
 
-![BJFS trajectory](../results/datasets/bjfs_2026_117_gps/trajectory.png)
+![UrbanNav BDS trajectory](latex/figures/urban_nav_bds_final/trajectory.png)
 
 TWTF BDS-only 误差、PDOP 与卫星数曲线：
 
-![TWTF BDS error dop](../results/datasets/twtf_2026_117_bds/error_dop.png)
+![TWTF BDS error dop](latex/figures/twtf_bds_final/error_dop.png)
 
 TWTF GPS+BDS 误差、PDOP 与卫星数曲线：
 
-![TWTF GPS BDS error dop](../results/datasets/twtf_2026_117_gps_bds/error_dop.png)
+![TWTF GPS BDS error dop](latex/figures/twtf_gps_bds_final/error_dop.png)
 
 GUI 主界面截图：
 
-![GUI](../results/gui_main_window.png)
+![GUI](latex/figures/gui_main_window.png)
 
 ## 6. 问题与修复记录
 

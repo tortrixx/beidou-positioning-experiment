@@ -10,7 +10,7 @@ GitHub 仓库：<https://github.com/tortrixx/beidou-positioning-experiment>
 | --- | --- |
 | 源码 | `src/`, `scripts/`, `tests/` |
 | 测试数据 | `data/sample/`, `data/datasets/` |
-| 结果图表 | `reports/latex/figures/`, `results/datasets/`, `results/ml_compensation/` |
+| 结果图表 | `reports/latex/figures/` |
 | LaTeX 报告 | `reports/latex/main.tex` |
 | Markdown 备份报告 | `reports/final_*.md`, `reports/project_explanation_guide.md` |
 
@@ -134,8 +134,9 @@ GUI 主界面：
 - `data/datasets/twtf_2026_117_mixed/`：RINEX 3 mixed 数据，适合 BDS 与 GPS+BDS 演示。
 - `data/datasets/urban_nav_hk_medium_urban_1/`：香港城市动态数据，适合展示 `.obs`、BDS 和复杂场景容错。
 - `data/datasets/redundancy_stress_2026_117/`：压缩格式与容错测试数据。
-- `results/datasets/`：已生成的连续定位 CSV、误差曲线和轨迹图。
-- `results/ml_compensation/`：附加题线性回归误差补偿模型与图表。
+- `results/datasets/`：已生成的连续定位 CSV。
+- `results/ml_compensation/`：附加题线性回归误差补偿模型与指标。
+- `reports/latex/figures/`：最终报告和 README 使用的新截图与图表。
 
 说明：UrbanNav 是动态城市数据，RINEX 头文件近似坐标不是固定真值轨迹，因此其误差统计主要用于验证复杂数据处理能力，不等同于静态测站精度。
 
