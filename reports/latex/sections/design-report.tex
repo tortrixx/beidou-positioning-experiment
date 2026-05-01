@@ -1,0 +1,97 @@
+\section{设计报告}
+
+\subsection{需求分析}
+
+本实验要求基于 RINEX 观测文件与广播星历文件，完成北斗/GNSS 定位解算全流程软件系统。系统需要实现 RINEX 数据导入、观测数据预处理、卫星位置与钟差计算、传播延迟修正、伪距单点定位、连续定位分析、结果可视化和 GUI 交互。
+
+结合实验文档中 5 个核心模块，项目的主要需求如下：
+
+\begin{enumerate}
+\item 支持 RINEX 观测文件与导航文件解析，提取卫星编号、伪距、信噪比、广播星历参数和测站近似坐标。
+\item 基于广播星历手写实现 GPS/BDS 卫星位置计算、钟差修正、相对论效应修正、对流层与电离层延迟改正。
+\item 构建伪距定位观测方程，采用迭代最小二乘解算接收机 ECEF 坐标、经纬高坐标和接收机钟差。
+\item 对多历元数据进行连续定位，输出定位轨迹、误差统计、DOP 和卫星可见数变化。
+\item 提供命令行与 PyQt GUI 两类入口，实现数据导入、参数设置、实时显示、轨迹回放和误差图查看。
+\end{enumerate}
+
+核心算法均由项目代码手写实现，没有调用 RTKLIB、georinex、pymap3d 等第三方定位库。第三方依赖主要用于 GUI、绘图和基础运行环境。
+
+\subsection{功能设计}
+
+软件按照实验要求划分为五个模块，各模块职责如下：
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.18\linewidth}p{0.24\linewidth}p{0.48\linewidth}}
+\toprule
+模块 & 主要文件 & 功能说明 \\
+\midrule
+RINEX 数据解析 & \texttt{rinex\_obs.py}, \texttt{rinex\_nav.py} & 读取 OBS/NAV 文件，解析观测类型、历元数据、伪距、SNR、星历和电离层参数。 \\
+卫星位置与修正 & \texttt{satellite.py}, \texttt{atmosphere.py} & 根据广播星历计算卫星 ECEF 坐标、钟差、相对论项、TGD、对流层和电离层改正。 \\
+单点定位解算 & \texttt{positioning.py}, \texttt{coords.py} & 构建伪距方程，执行加权迭代最小二乘，输出 ECEF、BLH、PDOP、GDOP 和残差。 \\
+连续定位分析 & \texttt{pipeline.py}, \texttt{analysis.py}, \texttt{plotting.py} & 逐历元循环解算，生成 CSV、误差统计、误差曲线、卫星数曲线和轨迹图。 \\
+系统整合测试 & \texttt{experiment\_modules.py}, \texttt{scripts/} & 封装五个实验模块，提供 CLI、GUI、批量运行和模型训练入口。 \\
+\bottomrule
+\end{tabular}
+\caption{软件功能模块划分}
+\end{table}
+
+\subsection{软件架构图}
+
+\begin{figure}[H]
+\centering
+\resizebox{0.96\linewidth}{!}{%
+\begin{tikzpicture}[
+  node distance=0.42cm,
+  stage/.style={draw, rounded corners, align=center, text width=2.5cm, minimum height=1.05cm, fill=blue!5},
+  arrow/.style={-Latex, thick}
+]
+\node[stage] (a) {RINEX\\OBS/NAV};
+\node[stage, right=of a] (b) {数据解析\\与预处理};
+\node[stage, right=of b] (c) {卫星位置\\钟差与延迟改正};
+\node[stage, right=of c] (d) {SPP\\最小二乘解算};
+\node[stage, right=of d] (e) {连续定位\\误差分析};
+\node[stage, right=of e] (f) {CSV/图像\\GUI 展示};
+\foreach \x/\y in {a/b,b/c,c/d,d/e,e/f}
+  \draw[arrow] (\x) -- (\y);
+\end{tikzpicture}}
+\caption{北斗定位解算软件总体架构}
+\end{figure}
+
+\subsection{主要流程图}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  node distance=0.62cm,
+  flow/.style={draw, rounded corners, align=center, text width=10.2cm, minimum height=0.62cm, fill=green!4},
+  arrow/.style={-Latex, thick}
+]
+\node[flow] (a) {选择 RINEX 观测文件和导航文件};
+\node[flow, below=of a] (b) {解析头文件、历元观测值、广播星历和电离层参数};
+\node[flow, below=of b] (c) {剔除无效伪距、不健康卫星、无星历卫星和低高度角卫星};
+\node[flow, below=of c] (d) {计算卫星 ECEF 坐标、卫星钟差、地球自转与传播延迟改正};
+\node[flow, below=of d] (e) {构建伪距观测方程，按高度角设置权重};
+\node[flow, below=of e] (f) {迭代最小二乘求解接收机坐标与钟差};
+\node[flow, below=of f] (g) {输出 BLH、PDOP、GDOP、残差和有效卫星数};
+\node[flow, below=of g] (h) {连续历元循环，生成 CSV、误差统计和图像};
+\foreach \x/\y in {a/b,b/c,c/d,d/e,e/f,f/g,g/h}
+  \draw[arrow] (\x) -- (\y);
+\end{tikzpicture}
+\caption{定位解算全流程}
+\end{figure}
+
+\subsection{数据结构设计}
+
+项目主要数据结构定义在 \texttt{src/models.py} 中：
+
+\begin{itemize}
+\item \texttt{ObsHeader}：保存观测文件版本、测站名、近似坐标、观测类型和时间系统。
+\item \texttt{ObsEpoch}：保存单历元时间、历元标志和以卫星编号为键的观测值字典。
+\item \texttt{NavRecord}：保存单颗卫星的一组广播星历参数，包括轨道参数、钟差参数、TGD 和健康状态。
+\item \texttt{NavHeader}：保存导航文件头信息，包括 GPS/BDS 电离层参数和闰秒信息。
+\item \texttt{PositionSolution}：保存定位结果、接收机钟差、使用卫星数、DOP 和残差诊断指标。
+\end{itemize}
+
+这些结构将 RINEX 文件、卫星计算和定位结果解耦，使各模块之间通过明确的数据对象传递信息，便于调试和后续扩展。

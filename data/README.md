@@ -31,8 +31,8 @@ The main index is:
 | `bjfs_2026_117_gps` | RINEX 2.11 | GPS | Full GPS run OK |
 | `daej_2026_117_gps` | RINEX 2.11 | GPS | Full GPS run OK |
 | `hksl_2026_117_gps` | RINEX 2.11 | GPS | Full GPS run OK |
-| `twtf_2026_117_mixed` | RINEX 3.04 | GPS/BDS/Galileo/GLONASS/QZSS/SBAS | Mixed parse OK; GPS-only run OK; BDS-only pending |
-| `urban_nav_hk_medium_urban_1` | RINEX 3.03 | GPS/BDS | Urban dynamic representative receiver data; BDS and GPS+BDS 200-epoch runs OK |
+| `twtf_2026_117_mixed` | RINEX 3.04 | GPS/BDS/Galileo/GLONASS/QZSS/SBAS | Mixed parse OK; GPS、BDS、GPS+BDS runs OK |
+| `urban_nav_hk_medium_urban_1` | RINEX 3.03 | GPS/BDS | Urban dynamic representative receiver data; BDS and GPS+BDS runs OK |
 | `redundancy_stress_2026_117` | RINEX 2.11/3.05 compressed | GPS and GPS/BDS | Robustness dataset for `.o.gz`, `.rnx.gz`, and Hatanaka warning tests |
 
 ## Result Outputs
@@ -56,6 +56,12 @@ Note: UrbanNav is a moving urban dataset. Its outputs are used mainly for
 processing stability and GPS/BDS availability checks rather than static-station
 precision statistics, because the RINEX approximate position is not a fixed
 truth trajectory.
+
+The final LaTeX report figures were regenerated from:
+
+- `data/datasets/urban_nav_hk_medium_urban_1` with BDS-only (`--systems C`);
+- `data/datasets/twtf_2026_117_mixed` with BDS-only (`--systems C`);
+- `data/datasets/twtf_2026_117_mixed` with GPS+BDS (`--systems G,C`).
 
 Robustness checks are stored under:
 

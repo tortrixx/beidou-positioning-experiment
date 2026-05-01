@@ -1,0 +1,54 @@
+\documentclass[UTF8,a4paper,11pt]{ctexart}
+
+\usepackage{geometry}
+\geometry{left=2.35cm,right=2.35cm,top=2.45cm,bottom=2.45cm}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{tikz}
+\usepackage{etoolbox}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!50!black,
+  citecolor=blue!50!black
+}
+
+\pdfstringdefDisableCommands{%
+  \def\unhbox#1{}%
+  \def\kern{}%
+}
+
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0.28em}
+\setlength{\emergencystretch}{3em}
+\renewcommand{\arraystretch}{1.12}
+\setlength{\tabcolsep}{4pt}
+\graphicspath{{./}}
+
+\title{北斗定位解算全流程软件系统开发实验报告}
+\author{电子科学与技术专业实验}
+\date{2026年5月}
+
+\begin{document}
+\maketitle
+\begin{center}
+\textbf{项目 GitHub 仓库：}\\
+\url{https://github.com/tortrixx/beidou-positioning-experiment}
+\end{center}
+\tableofcontents
+\newpage
+
+\input{sections/design-report.tex}
+\newpage
+\input{sections/experiment-report.tex}
+\newpage
+\input{sections/ai-extension-short.tex}
+
+\end{document}

@@ -2,6 +2,24 @@
 
 本项目基于 RINEX 观测与导航数据实现 GNSS 单点定位（SPP）全流程软件。当前已验证 GPS RINEX 2.11、RINEX 3 混合数据、BDS 单系统与 GPS+BDS 联合解算。代码采用模块化设计，包含解析、卫星位置/钟差、SPP 解算、连续定位、误差分析、可视化以及 PyQt GUI。
 
+## 提交材料索引
+
+GitHub 仓库：
+
+https://github.com/tortrixx/beidou-positioning-experiment
+
+供老师批阅时可按以下路径查看：
+
+| 提交要求 | 仓库路径 | 说明 |
+| --- | --- | --- |
+| 软件源码 | `src/`, `scripts/`, `tests/` | 核心算法、命令行入口、GUI、自动化测试 |
+| 测试数据 | `data/sample/`, `data/datasets/` | RINEX 2 GPS、RINEX 3 mixed、UrbanNav 城市动态数据、冗余测试数据 |
+| 结果截图与图表 | `results/datasets/`, `results/gui_main_window.png`, `results/ml_compensation/` | 连续定位误差图、轨迹图、GUI 截图、附加题补偿图 |
+| LaTeX 报告 | `reports/latex/main.tex` | Overleaf 主文件，使用 XeLaTeX 编译 |
+| Markdown 备份报告 | `reports/final_*.md`, `reports/project_explanation_guide.md` | 便于直接在 GitHub 页面浏览 |
+
+最终报告的 Overleaf 上传目录为 `reports/latex/`。上传该目录后，将 `main.tex` 设为主文件，编译器选择 XeLaTeX。
+
 ## 功能特性
 - RINEX 2.11 与 RINEX 3 混合观测/导航解析
 - 卫星位置与钟差修正
@@ -24,8 +42,8 @@ python3 -m pip install -r requirements.txt
 
 ## 数据说明
 将 RINEX 文件放在项目根目录或在命令行中传入路径：
-- 观测文件：`*.o` 或 `*.obs`
-- 导航文件：`*.n` 或 `*.nav`
+- 观测文件：`*.o`、`*.obs`、`*.rnx`、`*.gz`
+- 导航文件：`*.n`、`*.nav`、`*.rnx`、`*.gz`
 
 本仓库示例数据：
 - `data/sample/bjfs1170.26o`
@@ -42,6 +60,8 @@ python3 -m pip install -r requirements.txt
 `urban_nav_hk_medium_urban_1` 是香港城市动态数据，包含多设备 `.obs/.nmea` 文件与下载整理后的 2021-05-17 mixed navigation 星历。它适合展示北斗、多系统解析和复杂数据容错；因接收机处于运动环境，使用 RINEX 头文件近似坐标统计出的误差不能等同于静态测站精度。
 
 `redundancy_stress_2026_117` 是冗余测试数据，包含下载的 `.26o.gz/.26n.gz`、`.rnx.gz` 和 Hatanaka `.crx.gz` 场景，用于模拟验收时遇到不同压缩格式、不同 RINEX 版本和数据过少/无解等情况。
+
+说明：Hatanaka `.crx/.d` 文件当前会被程序识别并给出中文转换提示；需要先转换为普通 RINEX 后才能进入定位解算。
 
 ## 快速开始（命令行）
 ```bash

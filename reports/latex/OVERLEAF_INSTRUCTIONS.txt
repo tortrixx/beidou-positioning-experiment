@@ -1,0 +1,9 @@
+Overleaf 使用说明
+
+1. 将整个 reports/latex 目录上传到 Overleaf，必须保留 main.tex、sections/ 和 figures/ 的相对路径。
+2. 在 Overleaf 的 Menu 中将 Compiler 设置为 XeLaTeX。
+3. 将 main.tex 设为主文件并编译。
+4. main.tex 只引用最终提交所需的三部分：设计报告、实验报告、附加题短附录。
+5. 如果图片不显示，请确认 figures/ 目录已完整上传，且目录层级没有被压平。
+6. 流程图已经改写为 TikZ 原生图，不需要 Mermaid 插件。
+7. 报告首页已包含 GitHub 仓库链接：https://github.com/tortrixx/beidou-positioning-experiment
