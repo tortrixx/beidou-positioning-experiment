@@ -1,0 +1,96 @@
+name: Package Desktop App
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: Build ${{ matrix.artifact_name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            artifact_name: BeidouPositioning-windows-x64
+            archive_name: BeidouPositioning-windows-x64.zip
+            app_path: dist/BeidouPositioning
+          - os: macos-15
+            artifact_name: BeidouPositioning-macos-arm64
+            archive_name: BeidouPositioning-macos-arm64.zip
+            app_path: dist/BeidouPositioning.app
+          - os: macos-15-intel
+            artifact_name: BeidouPositioning-macos-x64
+            archive_name: BeidouPositioning-macos-x64.zip
+            app_path: dist/BeidouPositioning.app
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pyinstaller
+
+      - name: Build application
+        run: |
+          python -m PyInstaller --clean --noconfirm --windowed --onedir --name BeidouPositioning --paths src scripts/gui_app.py
+
+      - name: Archive Windows build
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "${{ matrix.app_path }}" -DestinationPath "${{ matrix.archive_name }}" -Force
+
+      - name: Archive macOS build
+        if: runner.os == 'macOS'
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent "${{ matrix.app_path }}" "${{ matrix.archive_name }}"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.archive_name }}
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download packaged artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release create "${{ github.ref_name }}" \
+              --repo "${{ github.repository }}" \
+              --title "${{ github.ref_name }}" \
+              --notes "Automated desktop application packages."
+          fi
+          gh release upload "${{ github.ref_name }}" release-assets/*.zip \
+            --repo "${{ github.repository }}" \
+            --clobber

@@ -9,6 +9,8 @@ __pycache__/
 venv/
 
 dist/
+build/
+*.spec
 data/datasets/*/raw/
 1_UrbanNav-HK-Medium-Urban-1/
 results.csv
