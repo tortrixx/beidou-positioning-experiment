@@ -21,3 +21,9 @@ results/datasets/urban_nav_hk_medium_urban_1_*/results.csv
 
 *.tmp
 *.log
+
+# Local/private report drafting artifacts
+*.docx
+~$*.docx
+reports/word_report_assets/
+scripts/build_word_experiment_report.py
