@@ -2,8 +2,6 @@
 
 本仓库实现 RINEX 观测/导航数据到 GNSS 单点定位结果分析的完整流程，支持 GPS、BDS 与 GPS+BDS 联合解算，提供命令行脚本、PyQt GUI、测试数据、结果图表和 LaTeX 实验报告。
 
-GitHub 仓库：<https://github.com/tortrixx/beidou-positioning-experiment>
-
 ## 提交材料
 
 | 内容 | 路径 |
@@ -11,10 +9,7 @@ GitHub 仓库：<https://github.com/tortrixx/beidou-positioning-experiment>
 | 源码 | `src/`, `scripts/`, `tests/` |
 | 测试数据 | `data/sample/`, `data/datasets/` |
 | 结果图表 | `reports/latex/figures/` |
-| LaTeX 报告 | `reports/latex/main.tex` |
-| Markdown 备份报告 | `reports/final_*.md`, `reports/project_explanation_guide.md` |
-
-Overleaf 编译报告时上传整个 `reports/latex/` 目录，主文件选择 `main.tex`，编译器选择 `XeLaTeX`。
+| 与 Codex 对话内容截图 | `img/` |
 
 ## 快速复现
 
