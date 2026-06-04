@@ -1,7 +1,10 @@
+"""matplotlib 中文字体配置，保证 GUI 和报告图中的中文可显示。"""
+
 from __future__ import annotations
 
 
 def configure_chinese_font(plt) -> None:
+    """从常见中文字体中选择一个已安装字体。"""
     try:
         import matplotlib.font_manager as fm
     except ImportError:

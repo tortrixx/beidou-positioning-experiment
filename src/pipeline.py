@@ -1,3 +1,5 @@
+"""连续定位流水线：读取 RINEX、逐历元 SPP、统计误差并输出结果。"""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -23,6 +25,7 @@ def run_continuous_pipeline(
     residual_gate_m: Optional[float] = None,
     progress: Optional[Callable[[int, int, PositionSolution], None]] = None,
 ) -> Tuple[ObsHeader, List[PositionSolution], List[Dict[str, float]], Dict[str, float]]:
+    """命令行和 GUI 共用的主流程入口。"""
     if step < 1:
         raise ValueError("step 步长必须 >= 1")
     if max_epochs < 0:
@@ -51,12 +54,14 @@ def run_continuous_pipeline(
     skip_reasons: Dict[str, int] = {}
 
     for idx, epoch in enumerate(epochs):
+        # step 用于抽稀处理，max_epochs 用于限制演示或测试时的处理历元数。
         if idx % step != 0:
             continue
         if max_epochs and processed_count >= max_epochs:
             break
         processed_count += 1
         try:
+            # 逐历元调用 SPP 核心；上一历元结果会作为下一历元初值以提高稳定性。
             sol = single_point_position(
                 epoch,
                 nav_header,
@@ -79,6 +84,7 @@ def run_continuous_pipeline(
             progress(idx, len(solutions), sol)
         init_xyz = sol.position_ecef
 
+    # 误差以观测文件头中的 APPROX POSITION XYZ 作为参考坐标。
     errors = compute_errors(solutions, obs_header.approx_position_xyz) if solutions else []
     stats = summarize_errors(errors)
     stats.update(
@@ -93,6 +99,7 @@ def run_continuous_pipeline(
 
 
 def write_csv(path: str, solutions: List[PositionSolution], errors: List[Dict[str, float]]) -> None:
+    """把定位解、DOP、残差和 ENU 误差写成后续绘图/汇总使用的 CSV。"""
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", encoding="utf-8") as f:

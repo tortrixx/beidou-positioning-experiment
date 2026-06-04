@@ -1,3 +1,5 @@
+"""命令行入口：训练附加题的线性误差补偿模型并生成对比图。"""
+
 from __future__ import annotations
 
 import argparse
@@ -19,6 +21,7 @@ from plot_style import configure_chinese_font
 
 
 DEFAULT_RESULTS = [
+    # 默认使用多数据集连续定位结果训练，避免只拟合单个测站。
     "results/datasets/bjfs_2026_117_gps/results.csv",
     "results/datasets/daej_2026_117_gps/results.csv",
     "results/datasets/hksl_2026_117_gps/results.csv",
@@ -29,6 +32,7 @@ DEFAULT_RESULTS = [
 
 
 def main() -> None:
+    """加载结果 CSV，训练模型，保存模型、预测结果、指标和柱状图。"""
     parser = argparse.ArgumentParser(description="训练线性回归定位误差补偿模型")
     parser.add_argument("--results", nargs="*", default=DEFAULT_RESULTS, help="输入定位结果 CSV 文件")
     parser.add_argument("--output-dir", default="results/ml_compensation", help="输出目录")
@@ -70,6 +74,7 @@ def _write_metrics(path: Path, train_metrics: dict[str, float], test_metrics: di
 
 
 def _plot_comparison(path: Path, train_metrics: dict[str, float], test_metrics: dict[str, float]) -> None:
+    """绘制补偿前后 RMS 对比柱状图。"""
     try:
         import matplotlib
 

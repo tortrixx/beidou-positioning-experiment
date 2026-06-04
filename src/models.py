@@ -1,3 +1,5 @@
+"""项目内部数据结构，连接 RINEX 解析、定位解算、GUI 和 CSV 输出。"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -7,6 +9,8 @@ from typing import Dict, List, Optional, Tuple
 
 @dataclass
 class ObsHeader:
+    """RINEX 观测头：测站、近似坐标、观测类型和时间系统。"""
+
     version: float
     marker_name: str
     approx_position_xyz: Optional[tuple[float, float, float]]
@@ -19,6 +23,8 @@ class ObsHeader:
 
 @dataclass
 class ObsEpoch:
+    """一个观测历元，sat_obs 中保存每颗卫星的观测值字典。"""
+
     time: datetime
     flag: int
     sat_obs: Dict[str, Dict[str, Optional[float]]]
@@ -26,6 +32,8 @@ class ObsEpoch:
 
 @dataclass
 class NavRecord:
+    """一条广播星历记录，对应某颗卫星某个参考时刻的轨道参数。"""
+
     prn: str
     epoch: datetime
     af0: float
@@ -61,6 +69,8 @@ class NavRecord:
 
 @dataclass
 class NavHeader:
+    """导航头中的电离层参数和闰秒信息。"""
+
     ion_alpha: Optional[Tuple[float, float, float, float]]
     ion_beta: Optional[Tuple[float, float, float, float]]
     leap_seconds: Optional[int]
@@ -69,6 +79,8 @@ class NavHeader:
 
 @dataclass
 class PositionSolution:
+    """一次 SPP 解算结果，包含坐标、钟差、DOP、参与卫星和残差。"""
+
     time: datetime
     position_ecef: Tuple[float, float, float]
     clock_bias_m: float

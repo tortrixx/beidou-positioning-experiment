@@ -1,3 +1,5 @@
+"""命令行入口：对指定 RINEX 数据的单个历元执行一次 SPP 解算。"""
+
 from __future__ import annotations
 
 import argparse
@@ -11,6 +13,7 @@ from gnss_systems import parse_systems
 
 
 def main() -> None:
+    """解析命令行参数，加载数据，并输出单历元定位结果。"""
     parser = argparse.ArgumentParser(description="单历元 GNSS 单点定位解算")
     parser.add_argument("--obs", default="data/sample/bjfs1170.26o", help="RINEX 观测文件路径")
     parser.add_argument("--nav", default="data/sample/brdc1170.26n", help="RINEX 导航文件路径")
@@ -33,6 +36,7 @@ def main() -> None:
 
     systems = parse_systems(args.systems)
     solver = SinglePointPositioningModule(dataset.nav_header, dataset.nav_records)
+    # 精度相关参数在这里传入核心算法：max_iter、err_thresh、elev_mask、residual_gate。
     solution = solver.solve_epoch(
         epochs[args.epoch],
         obs_header.approx_position_xyz,

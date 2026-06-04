@@ -1,3 +1,5 @@
+"""绘图工具：生成误差/DOP/卫星数曲线、轨迹散点图和轨迹回放。"""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -14,6 +16,7 @@ def plot_error_and_dop(
     save_path: Optional[str] = None,
     sat_counts: Optional[Iterable[int]] = None,
 ) -> bool:
+    """绘制水平/三维误差、PDOP 和可选卫星数曲线。"""
     try:
         if save_path:
             import matplotlib
@@ -71,6 +74,7 @@ def plot_trajectory(
     lon: Iterable[float],
     save_path: Optional[str] = None,
 ) -> bool:
+    """绘制经纬度轨迹散点图，可保存文件或直接弹窗显示。"""
     try:
         if save_path:
             import matplotlib
@@ -111,6 +115,7 @@ def playback_trajectory(
     lon: Iterable[float],
     interval_ms: int = 100,
 ) -> Optional[object]:
+    """使用 matplotlib 动画逐点回放轨迹，主要供脚本演示使用。"""
     try:
         import matplotlib.pyplot as plt
         from matplotlib.animation import FuncAnimation

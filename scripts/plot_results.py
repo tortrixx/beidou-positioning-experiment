@@ -1,3 +1,5 @@
+"""命令行入口：从已有定位结果 CSV 重新绘制误差图和轨迹图。"""
+
 from __future__ import annotations
 
 import argparse
@@ -11,6 +13,7 @@ from plotting import plot_error_and_dop, plot_trajectory
 
 
 def main() -> None:
+    """读取 write_csv 生成的结果 CSV，并调用 plotting 模块绘图。"""
     parser = argparse.ArgumentParser(description="从定位结果 CSV 绘制误差图和轨迹图")
     parser.add_argument("--csv", default="results.csv", help="定位结果 CSV 路径")
     parser.add_argument("--save-dir", default="", help="保存图像的目录；为空则弹窗显示")

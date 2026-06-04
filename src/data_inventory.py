@@ -1,3 +1,5 @@
+"""数据集清点工具：扫描 UrbanNav 等目录，生成观测文件摘要。"""
+
 from __future__ import annotations
 
 import json
@@ -77,6 +79,7 @@ def summarize_observation_file(
     dataset_name: str | None = None,
     dataset_root: str | Path | None = None,
 ) -> Dict[str, Any]:
+    """解析一个观测文件的版本、历元数、系统类型、BDS 覆盖和 NMEA 配套情况。"""
     obs_path = Path(path)
     root_path = Path(dataset_root) if dataset_root is not None else obs_path.parent
     header, epochs = parse_rinex_obs(obs_path)
@@ -101,6 +104,7 @@ def summarize_observation_file(
 
 
 def summarize_dataset_directory(root: str | Path) -> Dict[str, Any]:
+    """扫描一个数据集目录中的观测文件和导航文件。"""
     dataset_root = Path(root)
     dataset_name = dataset_root.name
     nav_files = _navigation_files(dataset_root)

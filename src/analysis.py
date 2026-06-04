@@ -1,3 +1,5 @@
+"""定位精度分析：把 ECEF 误差转为 ENU，并统计水平/三维误差。"""
+
 from __future__ import annotations
 
 import math
@@ -11,6 +13,7 @@ def compute_errors(
     solutions: Iterable[PositionSolution],
     ref_xyz: Tuple[float, float, float],
 ) -> List[Dict[str, float]]:
+    """以参考 ECEF 坐标为真值近似，计算每个定位解的 ENU 误差。"""
     lat_ref, lon_ref, _ = ecef_to_geodetic(*ref_xyz)
     results: List[Dict[str, float]] = []
 
@@ -57,6 +60,7 @@ def _max(values: Iterable[float]) -> float:
 
 
 def summarize_errors(errors: List[Dict[str, float]]) -> Dict[str, float]:
+    """汇总水平误差和三维误差的 RMS、均值和最大值。"""
     horiz = [row["horiz"] for row in errors]
     three_d = [row["three_d"] for row in errors]
     return {

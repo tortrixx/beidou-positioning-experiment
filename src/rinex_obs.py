@@ -1,3 +1,5 @@
+"""RINEX 观测文件解析器：支持 RINEX 2/3 的观测头和历元观测值。"""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -25,6 +27,7 @@ def _parse_obs_values(
     obs_types: List[str],
     offset: int = 0,
 ) -> Tuple[Dict[str, Optional[float]], int]:
+    """按 RINEX 固定宽度 16 字符解析一颗卫星的多种观测值。"""
     values: Dict[str, Optional[float]] = {}
     chunks: List[str] = []
     idx = start_index
@@ -56,6 +59,7 @@ def _looks_like_satellite_record(line: str) -> bool:
 
 
 def _normalize_satellite_id(raw: str) -> str:
+    """把 G1/C7 这类卫星编号统一成 G01/C07，便于后续匹配星历。"""
     sat = raw.strip()
     if not sat:
         return sat
@@ -69,6 +73,7 @@ def _normalize_satellite_id(raw: str) -> str:
 
 
 def parse_rinex_obs(path: str | Path) -> Tuple[ObsHeader, List[ObsEpoch]]:
+    """读取观测文件，返回头信息和按时间排列的观测历元。"""
     lines = read_rinex_text(path, kind="obs")
     i = 0
     version = 0.0
@@ -83,6 +88,7 @@ def parse_rinex_obs(path: str | Path) -> Tuple[ObsHeader, List[ObsEpoch]]:
     while i < len(lines):
         line = lines[i]
         label = line[60:80].strip()
+        # RINEX 头文件提供版本、测站近似坐标、观测类型和时间系统。
         if label == "RINEX VERSION / TYPE":
             version = float(line[0:9].strip())
         elif label == "MARKER NAME":
@@ -146,6 +152,7 @@ def parse_rinex_obs(path: str | Path) -> Tuple[ObsHeader, List[ObsEpoch]]:
 
     epochs: List[ObsEpoch] = []
     if version >= 3.0:
+        # RINEX 3 每个历元以 ">" 开头，卫星观测类型按系统分别定义。
         obs_types_by_sys = obs_types_by_sys or {}
         while i < len(lines):
             line = lines[i]
@@ -183,6 +190,7 @@ def parse_rinex_obs(path: str | Path) -> Tuple[ObsHeader, List[ObsEpoch]]:
         return header, epochs
 
     while i < len(lines):
+        # RINEX 2 的历元行直接列出时间和卫星编号，观测类型全系统共用。
         line = lines[i]
         if not line.strip():
             i += 1

@@ -1,3 +1,5 @@
+"""PyQt GUI：选择 RINEX 文件和参数，后台运行定位流水线并展示结果。"""
+
 from __future__ import annotations
 
 import sys
@@ -30,6 +32,7 @@ from plotting import plot_error_and_dop, plot_trajectory
 
 
 def _configure_replay_font() -> None:
+    """轨迹回放窗口使用 matplotlib 时，尽量启用中文字体。"""
     try:
         import matplotlib
     except ImportError:
@@ -38,6 +41,8 @@ def _configure_replay_font() -> None:
 
 
 class Worker(QObject):
+    """后台工作线程对象，避免长时间定位计算卡住 GUI 主界面。"""
+
     finished = pyqtSignal(object, object, object, object)
     failed = pyqtSignal(str)
     progress = pyqtSignal(int, int, object)
@@ -70,6 +75,7 @@ class Worker(QObject):
             def _progress(epoch_idx: int, count: int, sol) -> None:
                 self.progress.emit(epoch_idx, count, sol)
 
+            # GUI 的“开始解算”最终走到这里，再调用完整软件系统模块。
             result = SoftwareSystemModule().run(
                 self.obs_path,
                 self.nav_path,
@@ -88,6 +94,8 @@ class Worker(QObject):
 
 
 class MainWindow(QWidget):
+    """主窗口：文件选择、参数输入、运行日志、绘图和轨迹回放按钮都在这里。"""
+
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("北斗定位解算实验系统")
@@ -113,11 +121,13 @@ class MainWindow(QWidget):
         self.err_spin.setRange(0.001, 100.0)
         self.err_spin.setDecimals(3)
         self.err_spin.setSingleStep(0.01)
+        # GUI 中“误差阈值 (m)”控制 SPP 迭代收敛条件，对应 error_thresh_m。
         self.err_spin.setValue(0.01)
 
         self.elev_spin = QDoubleSpinBox()
         self.elev_spin.setRange(0.0, 30.0)
         self.elev_spin.setSingleStep(1.0)
+        # “高度角截止角”用于剔除低高度角卫星，对应 elev_mask_deg。
         self.elev_spin.setValue(10.0)
 
         self.systems_edit = QLineEdit("G")
@@ -200,6 +210,7 @@ class MainWindow(QWidget):
         self.log_view.append(text)
 
     def _start_run(self) -> None:
+        """读取界面参数，创建 Worker，并把计算放到 QThread 中执行。"""
         self.run_btn.setEnabled(False)
         self.plot_btn.setEnabled(False)
         self.replay_btn.setEnabled(False)
@@ -207,6 +218,7 @@ class MainWindow(QWidget):
         self._append_log("正在解算...")
 
         try:
+            # GNSS 系统输入在这里解析，支持 G、C 或 G,C。
             systems = parse_systems(self.systems_edit.text())
         except ValueError as exc:
             self._append_log(f"错误：{exc}")
@@ -236,6 +248,7 @@ class MainWindow(QWidget):
         self.thread.start()
 
     def _on_finished(self, obs_header, solutions, errors, stats) -> None:
+        """后台解算结束后刷新按钮状态和统计日志。"""
         self._solutions = solutions
         self._errors = errors
         if not solutions:
@@ -274,6 +287,7 @@ class MainWindow(QWidget):
         self.thread.quit()
 
     def _on_progress(self, epoch_idx: int, count: int, sol) -> None:
+        """每得到一个有效历元解，就更新界面上的经纬高、卫星数和 PDOP。"""
         self.pos_label.setText(
             f"纬度：{sol.position_blh[0]:.6f}  经度：{sol.position_blh[1]:.6f}  高程：{sol.position_blh[2]:.2f}"
         )
@@ -283,6 +297,7 @@ class MainWindow(QWidget):
             self._last_log_count = count
 
     def _plot(self) -> None:
+        """“绘制图像”按钮：用内存中的解算结果画误差/DOP 曲线和轨迹散点图。"""
         if not self._solutions:
             return
         times = list(range(len(self._solutions)))
@@ -296,6 +311,7 @@ class MainWindow(QWidget):
         plot_trajectory(lat, lon)
 
     def _replay(self) -> None:
+        """“轨迹回放”按钮：用 QTimer 逐点播放经纬度轨迹。"""
         if not self._solutions:
             return
         try:
@@ -382,6 +398,7 @@ class MainWindow(QWidget):
 
 
 def main() -> None:
+    """GUI 程序入口，运行方式：python scripts/gui_app.py。"""
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()

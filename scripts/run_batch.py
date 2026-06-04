@@ -1,3 +1,5 @@
+"""命令行入口：汇总多组已生成的定位结果 CSV。"""
+
 from __future__ import annotations
 
 import argparse
@@ -10,6 +12,7 @@ from batch import summarize_result_csv, write_summary
 
 
 DATASETS = [
+    # 格式：数据集名称、参与解算系统、对应结果 CSV。
     ("bjfs_2026_117_gps", "G", "results/datasets/bjfs_2026_117_gps/results.csv"),
     ("daej_2026_117_gps", "G", "results/datasets/daej_2026_117_gps/results.csv"),
     ("hksl_2026_117_gps", "G", "results/datasets/hksl_2026_117_gps/results.csv"),
@@ -22,6 +25,7 @@ DATASETS = [
 
 
 def main() -> None:
+    """遍历 DATASETS，生成报告使用的总表 CSV。"""
     parser = argparse.ArgumentParser(description="汇总多组定位结果 CSV 的精度指标")
     parser.add_argument("--output", default="results/summary.csv", help="汇总 CSV 输出路径")
     args = parser.parse_args()

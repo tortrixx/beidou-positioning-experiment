@@ -1,3 +1,5 @@
+"""GNSS 解算中使用的物理常数和 WGS84 椭球参数。"""
+
 from __future__ import annotations
 
 C = 299792458.0

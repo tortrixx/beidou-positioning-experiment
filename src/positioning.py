@@ -1,3 +1,5 @@
+"""SPP 单点定位核心：逐历元用伪距、星历和误差改正估计接收机位置。"""
+
 from __future__ import annotations
 
 import math
@@ -13,6 +15,7 @@ from time_utils import gps_week_seconds
 
 
 def _choose_pseudorange(obs: Dict[str, Optional[float]]) -> Optional[float]:
+    """按优先级从一个卫星的观测值中选出可用于 SPP 的伪距。"""
     for key in (
         "C1",
         "P1",
@@ -34,6 +37,7 @@ def _choose_pseudorange(obs: Dict[str, Optional[float]]) -> Optional[float]:
 
 
 def _earth_rotation_correction(pos: Tuple[float, float, float], tau: float) -> Tuple[float, float, float]:
+    """补偿信号传播时间内地球自转造成的卫星坐标旋转。"""
     angle = OMEGA_E * tau
     cos_a = math.cos(angle)
     sin_a = math.sin(angle)
@@ -52,6 +56,7 @@ def _ionosphere_coefficients(
 
 
 def _default_residual_gate_m(systems: Tuple[str, ...]) -> float:
+    """给残差粗差剔除提供默认阈值，BDS 城市场景放宽一些。"""
     if "C" in systems:
         return 1000.0
     return 150.0
@@ -66,10 +71,12 @@ def _validate_receiver_state(lat: float, lon: float, height_m: float) -> None:
 
 
 def _elevation_weight(elev_rad: float) -> float:
+    """高度角越低观测越不可靠，因此给低高度角卫星更小权重。"""
     return max(math.sin(elev_rad) ** 2, 0.05)
 
 
 def _solve_linear(a: List[List[float]], b: List[float]) -> List[float]:
+    """用高斯消元解法方程，避免额外依赖 numpy。"""
     size = len(a)
     m = [row[:] + [b[idx]] for idx, row in enumerate(a)]
     for col in range(size):
@@ -129,6 +136,7 @@ def single_point_position(
     residual_gate_m: Optional[float] = None,
     time_system: Optional[str] = None,
 ) -> PositionSolution:
+    """对单个观测历元执行加权迭代最小二乘 SPP 解算。"""
     x, y, z = approx_xyz
     clock_bias_by_system: Dict[str, float] = {system: 0.0 for system in systems}
     active_systems: List[str] = []
@@ -138,6 +146,7 @@ def single_point_position(
     postfit_residuals: List[float] = []
 
     for iter_idx in range(max_iter):
+        # 每次迭代都用当前接收机坐标重新计算卫星几何距离、方位角和高度角。
         lat, lon, h = ecef_to_geodetic(x, y, z)
         _validate_receiver_state(lat, lon, h)
         gps_time = epoch.time
@@ -149,6 +158,7 @@ def single_point_position(
         used_sats: List[str] = []
 
         for prn, obs in epoch.sat_obs.items():
+            # 先按系统、伪距范围、星历和高度角筛掉不能参与解算的卫星。
             if not prn:
                 continue
             if prn[0] not in systems:
@@ -181,6 +191,7 @@ def single_point_position(
             alpha, beta = _ionosphere_coefficients(nav_header, prn[0])
             iono = klobuchar_delay(lat, lon, elev, az, sow, alpha, beta)
 
+            # corrected 是扣除卫星钟差、对流层、电离层后的伪距观测量。
             corrected = pseudorange + C * dt_sv - tropo - iono
             sat_system = prn[0]
             v = corrected - (rho + clock_bias_by_system.get(sat_system, 0.0))
@@ -198,6 +209,7 @@ def single_point_position(
         if "G" in active_systems:
             active_systems.insert(0, active_systems.pop(active_systems.index("G")))
 
+        # 未知量包括三维坐标改正，以及每个系统一个接收机钟差。
         unknown_count = 3 + len(active_systems)
         if len(geometry_rows) < unknown_count:
             raise ValueError("参与定位的卫星数量不足")
@@ -223,9 +235,11 @@ def single_point_position(
             clock_bias_by_system[system] = clock_bias_by_system.get(system, 0.0) + dxs[3 + idx]
         postfit_residuals = [v - sum(row[i] * dxs[i] for i in range(unknown_count)) for row, v in design_rows]
 
+        # 坐标改正量小于 error_thresh_m 时认为收敛；精度要求可在 CLI/GUI 参数处调整。
         if math.sqrt(dxs[0] ** 2 + dxs[1] ** 2 + dxs[2] ** 2) < error_thresh_m:
             break
 
+    # 法方程逆矩阵的坐标部分用于计算 PDOP/GDOP。
     cov = _invert_matrix(normal)
     pdop = math.sqrt(cov[0][0] + cov[1][1] + cov[2][2])
     gdop = math.sqrt(cov[0][0] + cov[1][1] + cov[2][2] + cov[3][3])

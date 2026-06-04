@@ -1,3 +1,5 @@
+"""卫星星历计算：根据广播星历求卫星 ECEF 坐标和卫星钟差。"""
+
 from __future__ import annotations
 
 import math
@@ -12,6 +14,7 @@ BDS_GEO_INCLINATION_OFFSET = math.radians(-5.0)
 
 
 def _apply_time_offset(prn: str, t: datetime, time_system: Optional[str]) -> datetime:
+    """BDS 和 GPS 时间相差 14 秒，混合数据需要在选星历前统一时间基准。"""
     if prn.startswith("C") and time_system != "BDT":
         return t - timedelta(seconds=BDT_GPS_OFFSET)
     return t
@@ -33,6 +36,7 @@ def select_ephemeris(
     t: datetime,
     time_system: Optional[str] = None,
 ) -> Optional[NavRecord]:
+    """为指定卫星和发射时刻选择 toe 最接近且健康的星历。"""
     t_ref = _apply_time_offset(prn, t, time_system)
     _, sow = gnss_week_seconds(prn[0], t_ref)
     best: Optional[NavRecord] = None
@@ -55,6 +59,7 @@ def satellite_position_and_clock(
     t: datetime,
     time_system: Optional[str] = None,
 ) -> Tuple[Tuple[float, float, float], float]:
+    """按广播星历公式计算卫星位置和钟差。"""
     system = record.prn[0]
     t_ref = _apply_time_offset(record.prn, t, time_system)
     _, sow = gnss_week_seconds(system, t_ref)
@@ -74,6 +79,7 @@ def satellite_position_and_clock(
     e = record.e
     ek = m
     for _ in range(10):
+        # 迭代解开普勒方程 E = M + e sin(E)。
         ek = m + e * math.sin(ek)
 
     sin_e = math.sin(ek)
@@ -109,6 +115,7 @@ def satellite_position_and_clock(
     z_g = y_orb * sin_i
 
     if _is_bds_geo(record.prn):
+        # 北斗 GEO 卫星需要额外坐标旋转，普通 MEO/IGSO 走标准公式。
         sin_rot = math.sin(omega_e * tk)
         cos_rot = math.cos(omega_e * tk)
         sin_offset = math.sin(BDS_GEO_INCLINATION_OFFSET)

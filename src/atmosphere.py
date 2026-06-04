@@ -1,3 +1,5 @@
+"""大气延迟改正模型：对流层 Saastamoinen 和电离层 Klobuchar。"""
+
 from __future__ import annotations
 
 import math
@@ -7,6 +9,7 @@ from constants import C
 
 
 def saastamoinen_delay(lat: float, height_m: float, elev_rad: float) -> float:
+    """按测站纬度、高程和卫星高度角估计对流层延迟，单位 m。"""
     if elev_rad <= 0:
         return 0.0
 
@@ -31,6 +34,7 @@ def klobuchar_delay(
     alpha: Optional[Tuple[float, float, float, float]],
     beta: Optional[Tuple[float, float, float, float]],
 ) -> float:
+    """使用导航文件中的 alpha/beta 参数估计电离层延迟，单位 m。"""
     if alpha is None or beta is None:
         return 0.0
 

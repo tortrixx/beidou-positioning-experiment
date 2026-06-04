@@ -1,3 +1,5 @@
+"""项目回归测试：覆盖 RINEX 解析、SPP 流水线、GUI 相关容错和附加模块。"""
+
 from __future__ import annotations
 
 import subprocess
@@ -15,6 +17,8 @@ if str(SRC) not in sys.path:
 
 
 class ExperimentModuleTests(unittest.TestCase):
+    """使用 unittest 验证老师演示时依赖的核心功能不会退化。"""
+
     def test_rinex3_spaced_satellite_ids_are_normalized(self) -> None:
         from rinex_obs import parse_rinex_obs
 

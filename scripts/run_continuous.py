@@ -1,3 +1,5 @@
+"""命令行入口：连续处理多个历元，输出 CSV，并可生成误差和轨迹图。"""
+
 from __future__ import annotations
 
 import argparse
@@ -12,6 +14,7 @@ from plotting import plot_error_and_dop, plot_trajectory
 
 
 def main() -> None:
+    """解析连续定位参数，调用 SoftwareSystemModule 跑完整流水线。"""
     parser = argparse.ArgumentParser(description="连续历元 GNSS 单点定位处理")
     parser.add_argument("--obs", default="data/sample/bjfs1170.26o", help="RINEX 观测文件路径")
     parser.add_argument("--nav", default="data/sample/brdc1170.26n", help="RINEX 导航文件路径")
@@ -28,6 +31,7 @@ def main() -> None:
     args = parser.parse_args()
 
     systems = parse_systems(args.systems)
+    # 这里的参数与 GUI 面板基本一致，最终都会进入 src/pipeline.py。
     result = SoftwareSystemModule().run(
         args.obs,
         args.nav,
@@ -68,6 +72,7 @@ def main() -> None:
         return
 
     if args.plot:
+        # 绘图直接使用刚生成的 solutions/errors，不需要重新读取 CSV。
         times = list(range(len(solutions)))
         horiz = [err["horiz"] for err in errors]
         three_d = [err["three_d"] for err in errors]

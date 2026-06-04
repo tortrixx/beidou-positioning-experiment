@@ -1,3 +1,5 @@
+"""附加题：用简单线性回归对定位误差做经验补偿和效果评估。"""
+
 from __future__ import annotations
 
 import csv
@@ -22,12 +24,15 @@ TARGET_NAMES = ["east", "north", "up"]
 
 @dataclass
 class LinearCompensationModel:
+    """保存特征标准化参数和 east/north/up 三个方向的回归系数。"""
+
     feature_names: List[str]
     means: List[float]
     scales: List[float]
     coefficients: Dict[str, List[float]]
 
     def predict(self, row: Dict[str, str | float]) -> Dict[str, float]:
+        """根据一行定位结果 CSV 特征预测 ENU 误差。"""
         features = _scaled_features(row, self.feature_names, self.means, self.scales)
         values = [1.0] + features
         return {
@@ -49,6 +54,7 @@ class LinearCompensationModel:
 
 
 def load_result_rows(paths: Sequence[str | Path]) -> List[Dict[str, str]]:
+    """加载多个连续定位 CSV，并给每行补上数据集名称。"""
     rows: List[Dict[str, str]] = []
     for path_like in paths:
         path = Path(path_like)
@@ -62,6 +68,7 @@ def load_result_rows(paths: Sequence[str | Path]) -> List[Dict[str, str]]:
 
 
 def split_train_test(rows: Sequence[Dict[str, str]], train_ratio: float = 0.7) -> Tuple[List[Dict[str, str]], List[Dict[str, str]]]:
+    """用固定伪随机顺序切分训练集和测试集，保证结果可复现。"""
     if not 0.0 < train_ratio < 1.0:
         raise ValueError("train_ratio 训练集比例必须在 0 和 1 之间")
     ordered = sorted(enumerate(rows), key=lambda item: ((item[0] * 1103515245 + 12345) % 2**31))
@@ -72,6 +79,7 @@ def split_train_test(rows: Sequence[Dict[str, str]], train_ratio: float = 0.7) -
 
 
 def train_linear_model(rows: Sequence[Dict[str, str]], ridge: float = 1.0e-6) -> LinearCompensationModel:
+    """训练岭回归模型，分别拟合 east、north、up 误差。"""
     if len(rows) < 2:
         raise ValueError("训练至少需要两行样本")
 
@@ -93,6 +101,7 @@ def evaluate_compensation(
     model: LinearCompensationModel,
     rows: Sequence[Dict[str, str]],
 ) -> Dict[str, float]:
+    """比较补偿前后的水平 RMS 和三维 RMS。"""
     original_horiz: List[float] = []
     original_3d: List[float] = []
     compensated_horiz: List[float] = []
@@ -207,6 +216,7 @@ def _scaled_features(
 
 
 def _fit_ridge(x_rows: Sequence[Sequence[float]], y: Sequence[float], ridge: float) -> List[float]:
+    """组装岭回归法方程并求解系数。"""
     size = len(x_rows[0])
     normal = [[0.0 for _ in range(size)] for _ in range(size)]
     rhs = [0.0 for _ in range(size)]

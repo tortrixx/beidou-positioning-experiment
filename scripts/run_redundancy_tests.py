@@ -1,3 +1,5 @@
+"""命令行入口：运行压缩文件、多系统数据和异常输入的容错测试。"""
+
 from __future__ import annotations
 
 import argparse
@@ -18,6 +20,7 @@ STATUS_TEXT = {
 
 
 def main() -> None:
+    """构造冗余测试用例，运行后输出状态汇总。"""
     parser = argparse.ArgumentParser(description="运行多种 RINEX 输入的冗余与容错测试")
     parser.add_argument("--output", default="results/redundancy_tests/summary.csv", help="汇总 CSV 输出路径")
     parser.add_argument("--max-epochs", type=int, default=20, help="每个可运行案例的最大历元数")
@@ -29,6 +32,7 @@ def main() -> None:
     urban = root / "urban_nav_hk_medium_urban_1"
 
     cases = [
+        # 用例覆盖普通 RINEX2、gzip、RINEX3 mixed、城市动态数据和预期错误。
         RedundancyCase(
             name="sample_rinex2_gps",
             obs_path=root.parent / "sample" / "bjfs1170.26o",

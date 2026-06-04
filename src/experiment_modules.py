@@ -1,3 +1,5 @@
+"""按实验报告的模块划分封装 RINEX 解析、卫星改正、SPP 和结果分析。"""
+
 from __future__ import annotations
 
 import math
@@ -22,6 +24,8 @@ from time_utils import gps_week_seconds
 
 @dataclass
 class RinexDataset:
+    """一次实验所需的观测头、观测历元、导航头和导航星历集合。"""
+
     obs_header: ObsHeader
     epochs: List[ObsEpoch]
     nav_header: NavHeader
@@ -30,6 +34,8 @@ class RinexDataset:
 
 @dataclass
 class SatelliteMeasurement:
+    """单颗可见卫星经过钟差/大气改正后的中间观测量。"""
+
     prn: str
     pseudorange_m: float
     corrected_pseudorange_m: float
@@ -43,6 +49,8 @@ class SatelliteMeasurement:
 
 @dataclass
 class SystemRunResult:
+    """完整软件系统运行后的返回结果，供 GUI 和脚本复用。"""
+
     obs_header: ObsHeader
     solutions: List[PositionSolution]
     errors: List[Dict[str, float]]
@@ -53,6 +61,7 @@ class RinexDataModule:
     """模块1：RINEX 数据解析与基础预处理。"""
 
     def load(self, obs_path: str | Path, nav_path: str | Path) -> RinexDataset:
+        """读取观测文件和导航文件，并做最基本的数据完整性检查。"""
         obs_file = Path(obs_path)
         nav_file = Path(nav_path)
         if not obs_file.exists():
@@ -76,6 +85,7 @@ class RinexDataModule:
         systems: Iterable[str] = ("G",),
         pseudorange_limits_m: Tuple[float, float] = (1.0e7, 6.0e7),
     ) -> Dict[str, float]:
+        """筛选指定系统中伪距范围合理的观测，便于演示数据预处理。"""
         allowed_systems = tuple(systems)
         valid: Dict[str, float] = {}
         for prn, obs in epoch.sat_obs.items():
@@ -104,6 +114,7 @@ class SatelliteCorrectionModule:
         systems: Iterable[str] = ("G",),
         time_system: Optional[str] = None,
     ) -> List[SatelliteMeasurement]:
+        """计算可见卫星的坐标、钟差、高度角和大气延迟。"""
         if receiver_xyz is None:
             raise ValueError("缺少接收机坐标 receiver_xyz")
 
@@ -133,6 +144,7 @@ class SatelliteCorrectionModule:
             if elevation < elev_mask:
                 continue
 
+            # 这里得到的 corrected_pseudorange_m 是进入 SPP 方程的伪距观测量。
             tropo = saastamoinen_delay(lat, height, elevation)
             alpha, beta = _ionosphere_coefficients(self.nav_header, prn[0])
             iono = klobuchar_delay(lat, lon, elevation, azimuth, sow, alpha, beta)
@@ -172,6 +184,7 @@ class SinglePointPositioningModule:
         residual_gate_m: Optional[float] = None,
         time_system: Optional[str] = None,
     ) -> PositionSolution:
+        """对单个历元调用 src/positioning.py 中的 SPP 核心函数。"""
         if approx_xyz is None:
             raise ValueError("缺少近似坐标 approx_xyz")
         return single_point_position(
@@ -196,12 +209,14 @@ class ContinuousAnalysisModule:
         solutions: List[PositionSolution],
         reference_xyz: Optional[Tuple[float, float, float]],
     ) -> Tuple[List[Dict[str, float]], Dict[str, float]]:
+        """把 ECEF 定位误差转换为 ENU，并统计 RMS/均值/最大值。"""
         if reference_xyz is None:
             raise ValueError("缺少参考坐标 reference_xyz")
         errors = compute_errors(solutions, reference_xyz)
         return errors, summarize_errors(errors)
 
     def export_csv(self, path: str | Path, solutions: List[PositionSolution], errors: List[Dict[str, float]]) -> None:
+        """导出连续定位结果 CSV。"""
         write_csv(str(path), solutions, errors)
 
     def save_plots(
@@ -210,6 +225,7 @@ class ContinuousAnalysisModule:
         solutions: List[PositionSolution],
         errors: List[Dict[str, float]],
     ) -> Tuple[Path, Path]:
+        """保存误差/DOP/卫星数曲线和经纬度轨迹图。"""
         out_dir = Path(output_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         times = list(range(len(solutions)))
@@ -246,6 +262,7 @@ class SoftwareSystemModule:
         output_csv: Optional[str | Path] = None,
         progress: Optional[Callable[[int, int, PositionSolution], None]] = None,
     ) -> SystemRunResult:
+        """完整系统入口：GUI 和连续处理脚本都通过这里跑完整流程。"""
         obs_header, solutions, errors, stats = run_continuous_pipeline(
             str(obs_path),
             str(nav_path),

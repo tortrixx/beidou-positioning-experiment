@@ -1,3 +1,5 @@
+"""批量结果汇总：读取多个定位 CSV，计算报告表格需要的统计指标。"""
+
 from __future__ import annotations
 
 import csv
@@ -32,6 +34,7 @@ def _column(rows: List[Dict[str, str]], name: str) -> List[float]:
 
 
 def summarize_result_csv(dataset: str, system: str, csv_path: str | Path) -> Dict[str, float | int | str]:
+    """汇总单个结果 CSV 的误差、卫星数、PDOP 和残差指标。"""
     path = Path(csv_path)
     with path.open("r", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
@@ -64,6 +67,7 @@ def summarize_result_csv(dataset: str, system: str, csv_path: str | Path) -> Dic
 
 
 def write_summary(path: str | Path, summaries: List[Dict[str, float | int | str]]) -> None:
+    """把多数据集汇总结果写入 CSV。"""
     if not summaries:
         raise ValueError("没有可写入的汇总结果")
     output_path = Path(path)

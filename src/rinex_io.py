@@ -1,3 +1,5 @@
+"""RINEX 文件读取入口：统一处理普通文本、gzip 和 Hatanaka 提示。"""
+
 from __future__ import annotations
 
 import gzip
@@ -5,6 +7,7 @@ from pathlib import Path
 
 
 def read_rinex_text(path: str | Path, *, kind: str) -> list[str]:
+    """读取 RINEX 文本行；遇到 Hatanaka 压缩观测文件时给出明确错误。"""
     rinex_path = Path(path)
     lower = rinex_path.name.lower()
     if kind == "obs" and (

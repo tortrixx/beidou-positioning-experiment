@@ -1,3 +1,5 @@
+"""北斗/GNSS 定位实验包的公开接口。"""
+
 from experiment_modules import (
     ContinuousAnalysisModule,
     RinexDataModule,

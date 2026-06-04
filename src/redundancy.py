@@ -1,3 +1,5 @@
+"""冗余/容错测试模块：批量运行不同 RINEX 输入并记录成功或失败原因。"""
+
 from __future__ import annotations
 
 import csv
@@ -10,6 +12,8 @@ from pipeline import run_continuous_pipeline, write_csv
 
 @dataclass
 class RedundancyCase:
+    """一个容错测试用例，包括输入文件、系统选择和预期结果。"""
+
     name: str
     obs_path: str | Path
     nav_path: str | Path
@@ -22,6 +26,7 @@ class RedundancyCase:
 
 
 def run_redundancy_cases(cases: Iterable[RedundancyCase]) -> list[dict[str, object]]:
+    """顺序运行多组冗余测试用例。"""
     rows: list[dict[str, object]] = []
     for case in cases:
         rows.append(_run_case(case))
@@ -50,6 +55,7 @@ def write_redundancy_summary(path: str | Path, rows: list[dict[str, object]]) ->
 
 
 def _run_case(case: RedundancyCase) -> dict[str, object]:
+    """运行单个用例，并把异常也转成表格中的状态行。"""
     try:
         _, solutions, errors, stats = run_continuous_pipeline(
             str(case.obs_path),

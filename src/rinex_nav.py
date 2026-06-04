@@ -1,3 +1,5 @@
+"""RINEX 导航文件解析器：把广播星历头和每颗卫星的星历参数读成结构体。"""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -20,6 +22,7 @@ def _parse_time_fields(year: int, month: int, day: int, hour: int, minute: int, 
 
 
 def _parse_four(line: str) -> list[float]:
+    """解析 RINEX 2 导航记录中一行四个科学计数法字段。"""
     return [
         rinex_float(line[3:22]) or 0.0,
         rinex_float(line[22:41]) or 0.0,
@@ -29,6 +32,7 @@ def _parse_four(line: str) -> list[float]:
 
 
 def _parse_four_v3(line: str) -> list[float]:
+    """解析 RINEX 3 导航记录中一行四个科学计数法字段。"""
     return [
         rinex_float(line[4:23]) or 0.0,
         rinex_float(line[23:42]) or 0.0,
@@ -46,6 +50,7 @@ def _parse_header_four(line: str) -> Tuple[float, float, float, float]:
 
 
 def parse_rinex_nav(path: str | Path) -> Tuple[NavHeader, List[NavRecord]]:
+    """读取导航文件，返回电离层参数和 GPS/BDS 广播星历记录。"""
     lines = read_rinex_text(path, kind="nav")
     i = 0
     version = 0.0
@@ -93,6 +98,7 @@ def parse_rinex_nav(path: str | Path) -> Tuple[NavHeader, List[NavRecord]]:
 
     records: List[NavRecord] = []
     while i < len(lines):
+        # 每条 GPS/BDS 广播星历由首行钟差和后续 7 行轨道参数组成。
         line = lines[i]
         if not line.strip():
             i += 1

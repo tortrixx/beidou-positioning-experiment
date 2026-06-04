@@ -1,3 +1,5 @@
+"""命令行入口：快速检查 RINEX 观测/导航文件是否能被项目解析。"""
+
 from __future__ import annotations
 
 import argparse
@@ -10,6 +12,7 @@ from experiment_modules import RinexDataModule
 
 
 def main() -> None:
+    """加载 RINEX 数据并打印头信息、历元数和星历数量。"""
     parser = argparse.ArgumentParser(description="快速检查 RINEX 观测文件和导航文件")
     parser.add_argument("--obs", default="data/sample/bjfs1170.26o", help="RINEX 观测文件路径")
     parser.add_argument("--nav", default="data/sample/brdc1170.26n", help="RINEX 导航文件路径")

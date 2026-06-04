@@ -1,3 +1,5 @@
+"""GPS/BDS 周秒转换工具，供星历选择和卫星位置计算使用。"""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -21,6 +23,7 @@ def gps_week_seconds(dt: datetime) -> tuple[int, float]:
 
 
 def gnss_week_seconds(system: str, dt: datetime) -> tuple[int, float]:
+    """按系统选择 GPS 或 BDS 时间起点，返回周数和周内秒。"""
     epoch = BDT_EPOCH if system == "C" else GPS_EPOCH
     total = (dt - epoch).total_seconds()
     week = int(total // SECONDS_IN_WEEK)
@@ -29,6 +32,7 @@ def gnss_week_seconds(system: str, dt: datetime) -> tuple[int, float]:
 
 
 def adjust_week(tk: float) -> float:
+    """把时间差调整到半周范围内，处理广播星历跨周问题。"""
     if tk > HALF_WEEK:
         tk -= SECONDS_IN_WEEK
     elif tk < -HALF_WEEK:

@@ -1,3 +1,5 @@
+"""命令行入口：扫描 UrbanNav 数据集并生成元数据摘要。"""
+
 from __future__ import annotations
 
 import argparse
@@ -11,6 +13,7 @@ from data_inventory import summarize_dataset_directory, write_summary_json
 
 
 def main() -> None:
+    """输出 UrbanNav 观测文件清单、BDS 覆盖情况和 NMEA 配套信息。"""
     parser = argparse.ArgumentParser(description="汇总 UrbanNav 观测文件和 NMEA 文件信息")
     parser.add_argument("--root", default="data/datasets/urban_nav_hk_medium_urban_1", help="UrbanNav 数据目录")
     parser.add_argument("--json", default="data/datasets/urban_nav_hk_medium_urban_1/metadata.json")
