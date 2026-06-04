@@ -25,5 +25,7 @@ results/datasets/urban_nav_hk_medium_urban_1_*/results.csv
 # Local/private report drafting artifacts
 *.docx
 ~$*.docx
+reports/latex_overleaf_design_report.zip
+reports/*由PDF转换*.docx
 reports/word_report_assets/
 scripts/build_word_experiment_report.py
